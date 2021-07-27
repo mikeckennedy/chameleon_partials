@@ -127,3 +127,10 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+.idea/chameleon_partials.iml
+.idea/misc.xml
+.idea/modules.xml
+.idea/vcs.xml
+.idea/webResources.xml
+.idea/inspectionProfiles/profiles_settings.xml
+.idea/inspectionProfiles/Project_Default.xml
