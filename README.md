@@ -1,6 +1,7 @@
 # Chameleon Partials
 
 Simple reuse of partial HTML page templates in the Chameleon template language for Python web frameworks.
+(There is also a [Jinja2/Flask version here](https://github.com/mikeckennedy/jinja_partials).)
 
 ## Overview
 
