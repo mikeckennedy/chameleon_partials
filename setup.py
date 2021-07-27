@@ -18,7 +18,7 @@ with open('./requirements.txt', 'r', encoding='utf-8') as fin:
 
 
 def read_version():
-    filename = os.path.join(os.path.dirname(__file__), 'jinja_partials', '__init__.py')
+    filename = os.path.join(os.path.dirname(__file__), 'chameleon_partials', '__init__.py')
     with open(filename, mode="r", encoding='utf-8') as fin2:
         for line in fin2:
             if line and line.strip() and line.startswith('__version__'):
