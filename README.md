@@ -14,14 +14,14 @@ This project comes with a sample flask application (see the `example` folder). T
 that can be played on YouTube. The image, subtitle of author and view count are reused throughout the
 app. Here's a visual:
 
-![](https://raw.githubusercontent.com/mikeckennedy/jinja_partials/main/readme_resources/reused-html-visual.png)
+![](https://raw.githubusercontent.com/mikeckennedy/chameleon_partials/main/readme_resources/reused-html-visual.png)
 
-Check out the [**demo / example application**](https://github.com/mikeckennedy/jinja_partials/tree/main/example) 
+Check out the [**demo / example application**](https://github.com/mikeckennedy/chameleon_partials/tree/main/example) 
 to see it in action. 
 
 ## Installation
 
-It's just `pip install jinja-partials` and you're all set with this pure Python package.
+It's just `pip install chameleon-partials` and you're all set with this pure Python package.
 
 ## Usage
 
