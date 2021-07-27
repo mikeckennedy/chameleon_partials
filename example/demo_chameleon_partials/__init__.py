@@ -5,7 +5,7 @@ from pyramid.config import Configurator
 import chameleon_partials
 
 
-def main(global_config, **settings):
+def main(_, **settings):
     """ This function returns a Pyramid WSGI application.
     """
     with Configurator(settings=settings) as config:

@@ -10,7 +10,7 @@ That's what this library is all about.
 
 ## Example
 
-This project comes with a sample flask application (see the `example` folder). This app displays videos
+This project comes with a sample Pyramid application (see the `example` folder). This app displays videos
 that can be played on YouTube. The image, subtitle of author and view count are reused throughout the
 app. Here's a visual:
 
@@ -25,44 +25,55 @@ It's just `pip install chameleon-partials` and you're all set with this pure Pyt
 
 ## Usage
 
-Using the library is incredible easy. The first step is to register the partial method with Jinja and Flask.
+Using the library is incredible easy. The first step is to register the partial method with Chameleon.
 Do this once at app startup:
 
 ```python
-import flask
-import jinja_partials
+from pathlib import Path
+import chameleon_partials
 
-app = flask.Flask(__name__)
+def main(_, **settings):
+    """ This function returns a Pyramid WSGI application.
+    """
+    with Configurator(settings=settings) as config:
+        config.include('pyramid_chameleon')
+        config.include('.routes')
+        config.scan()
+        
+        # Register the extension for working with Chameleon.
+        folder = (Path(__file__).parent / "templates").as_posix()
+        chameleon_partials.register_extensions(folder, auto_reload=True, cache_init=True)
 
-jinja_partials.register_extensions(app)
-# ...
+    return config.make_wsgi_app()
 ```
 
-Next, you define your main HTML (Jinja2) templates as usual. Then 
+Next, you define your main HTML (Chameleon) templates as usual. Then 
 define your partial templates. I recommend locating and naming them accordingly:
 
 ```
 ├── templates
+│   ├── errors
+│   │   └── 404.pt
 │   ├── home
-│   │   ├── index.html
-│   │   └── listing.html
+│   │   ├── index.pt
+│   │   └── listing.pt
 │   └── shared
-│       ├── _layout.html
+│       ├── _layout.pt
 │       └── partials
-│           ├── partial_video_image.html
-│           └── partial_video_square.html
+│           ├── video_image.pt
+│           └── video_square.pt
 ```
 
-Notice the `partials` subfolder in the `templates` folder.
+Notice the `partials` subfolder in the `templates/shared` folder.
 
 The templates are just HTML fragments. Here is a stand-alone one for the YouTube thumbnail from
 the example app:
 
 ```html
-<img src="https://img.youtube.com/vi/{{ video.id }}/maxresdefault.jpg"
-     class="img img-responsive {{ ' '.join(classes) }}"
-     alt="{{ video.title }}"
-     title="{{ video.title }}">
+<img src="https://img.youtube.com/vi/${ video.id }/maxresdefault.jpg"
+     class="img img-responsive ${ ' '.join(classes or []) }"
+     alt="${ video.title }"
+     title="${ video.title }">
 ```
 
 Notice that an object called `video` and list of classes are passed in as the model.
@@ -72,12 +83,12 @@ linking out to YouTube:
 
 ```html
 <div>
-    <a href="https://www.youtube.com/watch?v={{ video.id }}" target="_blank">
-        {{ render_partial('shared/partials/partial_video_image.html', video=video) }}
+    <a href="https://www.youtube.com/watch?v=${ video.id }" target="_blank">
+        ${ render_partial('shared/partials/video_image.pt', video=video, classes=[]) }
     </a>
-    <a href="https://www.youtube.com/watch?v={{ video.id }}" target="_blank"
-       class="author">{{ video.author }}</a>
-    <div class="views">{{ "{:,}".format(video.views) }} views</div>
+    <a href="https://www.youtube.com/watch?v=${ video.id }" target="_blank"
+       class="author">${ video.author }</a>
+    <div class="views">${ "{:,}".format(video.views) } views</div>
 </div>
 ```
 
@@ -87,14 +98,30 @@ any model data passed in as keyword arguments.
 We can finally generate the list of video blocks as follows:
 
 ```html
-{% for v in videos %}
-
-    <div class="col-md-3 video">
-        {{ render_partial('shared/partials/partial_video_square.html', video=v) }}
-    </div>
-
-{% endfor %}
+<div class="video" tal:repeat="v videos">
+    ${ render_partial('shared/partials/video_square.pt', video=v) }
+</div>
 ```
 
 This time, we reframe each item in the list from the outer template (called `v`) as the `video` model
 in the inner HTML section.
+
+## The View Methods
+
+In order to share the `render_partial()` function with your template, you'll need to pass it along to the
+template with your model (dictionary). We've built a simple function to keep this fool-proof: 
+
+```python
+chameleon_partials.extend_model(model)
+```
+
+Here's a typical view method that uses `render_partial`, notice the use of extending the 
+model before passing it to the view:
+
+```python
+@view_config(route_name='listing', renderer='demo_chameleon_partials:templates/home/listing.pt')
+def listing(_):
+    videos = video_service.all_videos()
+    model = dict(videos=videos)
+    return chameleon_partials.extend_model(model)
+```
