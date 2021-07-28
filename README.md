@@ -110,7 +110,25 @@ in the inner HTML section.
 ## The View Methods
 
 In order to share the `render_partial()` function with your template, you'll need to pass it along to the
-template with your model (dictionary). We've built a simple function to keep this fool-proof: 
+template with your model (dictionary). 
+
+If you are using the **Pyramid web framework**, you can add this file as middleware. Just drop it into
+your `veiws` folder:
+
+```python
+# views/partials_middleware.py
+from pyramid.events import subscriber, BeforeRender
+
+import chameleon_partials
+
+
+@subscriber(BeforeRender)
+def add_global(event):
+    event['render_partial'] = chameleon_partials.render_partial
+```
+
+For other frameworks using Chameleon (e.g. FastAPI), you can append the render_partial to the
+resulting dictionary. We've built a simple function to keep this fool-proof: 
 
 ```python
 chameleon_partials.extend_model(model)
@@ -126,3 +144,6 @@ def listing(_):
     model = dict(videos=videos)
     return chameleon_partials.extend_model(model)
 ```
+
+Again: If you are using Pyramid, use the middleware. Otherwise, use the `extend_model()` method or something 
+similar to them middleware in your framework.

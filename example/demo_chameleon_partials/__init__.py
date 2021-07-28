@@ -1,5 +1,6 @@
 from pathlib import Path
 
+# noinspection PyPackageRequirements
 from pyramid.config import Configurator
 
 import chameleon_partials
@@ -12,6 +13,7 @@ def main(_, **settings):
         config.include('pyramid_chameleon')
         config.include('.routes')
         config.scan()
+
         folder = (Path(__file__).parent / "templates").as_posix()
         chameleon_partials.register_extensions(folder, auto_reload=True, cache_init=True)
 
