@@ -1,0 +1,26 @@
+<div metal:use-macro="load: ../shared/_layout.pt">
+    <div metal:fill-slot="content">
+
+        <h1>Demo app: chameleon_partials</h1>
+
+
+        <div class="container">
+
+
+            <div class="container videos category">
+                <div class="row" tal:repeat="row rows">
+                    <div class="col-md-1"></div>
+
+
+                    <div class="col-md-3 video" tal:repeat="v row">
+                            ${ render_partial('shared/partials/video_square.pt', video=v) }
+                    </div>
+
+
+                </div>
+            </div>
+
+
+        </div>
+    </div>
+</div>

@@ -1,0 +1,21 @@
+<!DOCTYPE html metal:define-macro="layout">
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Chameleon Partials Test Template</title>
+</head>
+<body>
+
+<div class="main_content">
+    <div metal:define-slot="content">No content</div>
+</div>
+
+<footer>
+    <div class="copyright">
+        This is a demo template footer.
+    </div>
+</footer>
+
+
+</body>
+</html>
