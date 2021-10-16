@@ -41,6 +41,17 @@ def test_render_with_layout(registered_extension):
     assert value_text in html.html_text
 
 
+def test_render_recursive(registered_extension):
+    value_text = "The message is clear"
+    inner_text = "The message is recursive"
+
+    html: chameleon_partials.HTML = chameleon_partials.render_partial('render/recursive.pt',
+                                                                      message=value_text,
+                                                                      inner=inner_text)
+    assert value_text in html.html_text
+    assert inner_text in html.html_text
+
+
 def test_missing_template(registered_extension):
     with pytest.raises(ValueError):
         chameleon_partials.render_partial('no-way.pt', message=7)
