@@ -13,6 +13,9 @@ def registered_extension():
     chameleon_partials.register_extensions(folder, auto_reload=True, cache_init=True)
 
     # Allow test to work with extensions as registered
+    print("********************************************")
+    print(folder)
+    print("********************************************")
     yield
 
     # Roll back the fact that we registered the extensions for future tests.
@@ -20,4 +23,12 @@ def registered_extension():
 
 
 def test_render_empty(registered_extension):
-    assert True, "dummy sample test"
+    html: chameleon_partials.HTML = chameleon_partials.render_partial('render/bare.pt')
+    assert '<h1>This is bare HTML fragment</h1>' in html.html_text
+
+
+def test_render_with_data(registered_extension):
+    name = 'Sarah'
+    age = 32
+    html: chameleon_partials.HTML = chameleon_partials.render_partial('render/with_data.pt', name=name, age=age)
+    assert f'<span>Your name is {name} and age is {age}</span>' in html.html_text

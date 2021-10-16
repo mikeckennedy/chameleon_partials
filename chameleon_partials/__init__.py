@@ -50,7 +50,7 @@ class HTML:
         return self.html_text
 
 
-def render_partial(template_file: str, **template_data: dict) -> HTML:
+def render_partial(template_file: str, **template_data) -> HTML:
     if not has_registered_extensions:
         raise PartialsException("You must call register_extensions() before this function can be used.")
 
