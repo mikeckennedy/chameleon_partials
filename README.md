@@ -113,7 +113,7 @@ In order to share the `render_partial()` function with your template, you'll nee
 template with your model (dictionary). 
 
 If you are using the **Pyramid web framework**, you can add this file as middleware. Just drop it into
-your `veiws` folder:
+your `views` folder:
 
 ```python
 # views/partials_middleware.py
