@@ -1,0 +1,51 @@
+{
+  "build_time": "2026-06-09T23:59:49Z",
+  "total_seconds": 3.468,
+  "pages": [
+    {
+      "page": "reference/render_partial.qmd",
+      "seconds": 1.09,
+      "frozen": false
+    },
+    {
+      "page": "index.qmd",
+      "seconds": 1.036,
+      "frozen": false
+    },
+    {
+      "page": "reference/extend_model.qmd",
+      "seconds": 0.206,
+      "frozen": false
+    },
+    {
+      "page": "reference/register_extensions.qmd",
+      "seconds": 0.203,
+      "frozen": false
+    },
+    {
+      "page": "skill.md",
+      "seconds": 0.194,
+      "frozen": false
+    },
+    {
+      "page": "reference/PartialsException.qmd",
+      "seconds": 0.194,
+      "frozen": false
+    },
+    {
+      "page": "skills.qmd",
+      "seconds": 0.192,
+      "frozen": false
+    },
+    {
+      "page": "reference/index.qmd",
+      "seconds": 0.181,
+      "frozen": false
+    },
+    {
+      "page": "license.qmd",
+      "seconds": 0.172,
+      "frozen": false
+    }
+  ]
+}

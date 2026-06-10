@@ -1,0 +1,76 @@
+# Great Docs configuration for chameleon_partials.
+# See https://posit-dev.github.io/great-docs/user-guide/configuration.html
+#
+# Import name == distribution name (chameleon_partials), so no `module:` override is needed.
+
+display_name: Chameleon Partials
+
+# Pin the docstring style instead of relying on auto-detect. `great-docs init` defaulted to
+# numpy (there were no docstrings to detect); the public API is documented in Google style.
+parser: google
+
+# Runtime introspection (default). `great-docs init` confirmed it works for this package.
+dynamic: true
+
+# Subpath hosting: drives Quarto's base path so CSS/JS/nav resolve under the subdirectory.
+# Keep the trailing slash.
+site_url: "https://mkennedy.codes/docs/chameleon-partials/"
+
+# GOTCHA G7: the sitemap / robots / canonical / og:url base URL is auto-detected from the
+# GitHub repo (-> owner.github.io/repo) and does NOT fall back to site_url. Pin it here so
+# those tags use the real hosting domain instead of a github.io URL.
+seo:
+  canonical:
+    base_url: "https://mkennedy.codes/docs/chameleon-partials/"
+
+# GitHub integration + "source" links to the code on GitHub. The package lives at the git
+# root (pyproject dir == git root), so source links resolve directly — gotcha G6 (the
+# fix_source_links pre-render hook) does not apply here.
+repo: https://github.com/mikeckennedy/chameleon_partials
+github_style: widget
+source:
+  enabled: true
+  branch: main
+  placement: usage
+
+# Link to the package on PyPI.
+pypi: true
+
+# GOTCHA G5: Great Docs defaults mcp.enabled to TRUE, which renders an empty "MCP" tab even
+# though this library ships no MCP server. Disable it.
+mcp:
+  enabled: false
+
+# Jupyter kernel for any executable code cells (project-level default).
+jupyter: python3
+
+# Author metadata (shown in the landing-page sidebar).
+authors:
+  - name: Michael Kennedy
+    role: Author
+    email: michael@talkpython.fm
+    github: mikeckennedy
+    homepage: https://talkpython.fm
+
+# API reference, grouped by task. Names match the `__all__` exports reported by
+# `great-docs scan`. The HTML wrapper returned by render_partial is intentionally omitted
+# (it is not exported in __all__ and is an internal return-value wrapper).
+reference:
+  title: "API Reference"
+  desc: >-
+    The complete public API of chameleon_partials: register the extension, render
+    partial templates, share render_partial with your view models, and handle errors.
+  sections:
+    - title: Setup
+      desc: "Register chameleon_partials with Chameleon. Call this once at application startup."
+      contents:
+        - register_extensions
+    - title: Rendering partials
+      desc: "Render partial templates and expose render_partial to your view models."
+      contents:
+        - render_partial
+        - extend_model
+    - title: Exceptions
+      desc: "Errors raised by the library."
+      contents:
+        - PartialsException
