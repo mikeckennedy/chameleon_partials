@@ -138,3 +138,4 @@ dmypy.json
 .idea/webResources.xml
 .idea/inspectionProfiles/profiles_settings.xml
 .idea/inspectionProfiles/Project_Default.xml
+docs/build-timings.json
