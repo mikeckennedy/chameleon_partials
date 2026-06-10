@@ -12,7 +12,7 @@ That's what this library is all about.
 ## Example
 
 This project comes with a sample Pyramid application (see the `example` folder). This app displays videos
-that can be played on YouTube. The image, subtitle of author and view count are reused throughout the
+that can be played on YouTube. The image, author subtitle, and view count are reused throughout the
 app. Here's a visual:
 
 ![](https://raw.githubusercontent.com/mikeckennedy/chameleon_partials/main/readme_resources/reused-html-visual.png)
@@ -26,7 +26,7 @@ It's just `pip install chameleon-partials` and you're all set with this pure Pyt
 
 ## Usage
 
-Using the library is incredible easy. The first step is to register the partial method with Chameleon.
+Using the library is incredibly easy. The first step is to register the partial method with Chameleon.
 Do this once at app startup:
 
 ```python
@@ -146,4 +146,4 @@ def listing(_):
 ```
 
 Again: If you are using Pyramid, use the middleware. Otherwise, use the `extend_model()` method or something 
-similar to them middleware in your framework.
+similar to the middleware in your framework.

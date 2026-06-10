@@ -1,2 +1,6 @@
 pytest
 pytest-clarity
+# great-docs builds the documentation site (Phase 1 of the docs playbook). The
+# marker keeps `pip install .[dev]` working on Python 3.10 and below, where
+# great-docs (which requires >=3.11) is simply skipped.
+great-docs; python_version >= '3.11'

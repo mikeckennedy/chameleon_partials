@@ -71,6 +71,10 @@ instance/
 # Sphinx documentation
 docs/_build/
 
+# Great Docs ephemeral build directory. The committed, deployable site lives in /docs/
+# (mirrored there by scripts/build_docs.py); only the build scratch dir is ignored.
+/great-docs/
+
 # PyBuilder
 target/
 
