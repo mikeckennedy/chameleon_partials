@@ -3,13 +3,18 @@
 Simple reuse of partial HTML page templates in the Chameleon template language for Python web frameworks.
 (There is also a [Jinja2/Flask version here](https://github.com/mikeckennedy/jinja_partials).)
 
-**Docs**: Full API documentation is at [mkennedy.codes/docs/chameleon-partials](https://mkennedy.codes/docs/chameleon-partials/).
-
 ## Overview
 
 When building real-world web apps with Chameleon, it's easy to end up with repeated HTML fragments.
 Just like organizing code for reuse, it would be ideal to reuse smaller sections of HTML template code.
 That's what this library is all about.
+
+## Documentation
+
+Full documentation lives at
+[mkennedy.codes/docs/chameleon-partials](https://mkennedy.codes/docs/chameleon-partials/),
+including the complete [API reference](https://mkennedy.codes/docs/chameleon-partials/reference/)
+generated from the library's docstrings.
 
 ## Example
 
