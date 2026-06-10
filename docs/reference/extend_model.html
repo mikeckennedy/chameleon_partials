@@ -268,6 +268,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#parameters" id="toc-parameters" class="nav-link active" data-scroll-target="#parameters">Parameters</a></li>
   <li><a href="#returns" id="toc-returns" class="nav-link" data-scroll-target="#returns">Returns</a></li>
   <li><a href="#raises" id="toc-raises" class="nav-link" data-scroll-target="#raises">Raises</a></li>
+  <li><a href="#examples" id="toc-examples" class="nav-link" data-scroll-target="#examples">Examples</a></li>
   </ul>
 </nav>
     </div>
@@ -298,19 +299,19 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 <div class="doc-usage-source">
 <p>Usage</p>
-<p><a href="https://github.com/mikeckennedy/chameleon_partials/blob/main/chameleon_partials/__init__.py#L123-L147" target="_blank" rel="noopener">Source</a></p>
+<p><a href="https://github.com/mikeckennedy/chameleon_partials/blob/main/chameleon_partials/__init__.py#L163-L196" target="_blank" rel="noopener">Source</a></p>
 </div>
 <div class="doc-signature doc-Kind.FUNCTION">
 <div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="sig-name">extend_model</span>(<span class="va">model</span>)</span></code></pre></div>
 </div>
 <div class="doc-text">
-<p>Use this in frameworks where a view returns a model dictionary (for example FastAPI) and you need <a href="render_partial.html#chameleon_partials.render_partial" class="gdls-link gdls-code">render_partial</a> available inside the template. For Pyramid, prefer the <code>BeforeRender</code> middleware shown in the README instead.</p>
+<p>Use this in frameworks where a view returns a model dictionary (for example FastAPI) and you need <a href="render_partial.html#chameleon_partials.render_partial" class="gdls-link gdls-code">render_partial</a> available inside the template. For Pyramid, prefer the <code>BeforeRender</code> middleware shown in the README instead. Any existing <a href="render_partial.html#chameleon_partials.render_partial" class="gdls-link gdls-code">render_partial</a> key in the model is replaced.</p>
 </div>
 <section id="parameters" class="level2 doc-parameters">
 <h2 class="doc-parameters">Parameters</h2>
 <div class="doc-definition-items">
 <dl>
-<dt><code><span class="doc-parameter-name">model</span><span class="doc-parameter-annotation-sep">:</span> <span class="doc-parameter-annotation">Dict[str, Any]</span></code></dt>
+<dt><code><span class="doc-parameter-name">model</span><span class="doc-parameter-annotation-sep">:</span> <span class="doc-parameter-annotation">Optional[Dict[str, Any]]</span></code></dt>
 <dd>
 The view model dictionary to extend. <code>None</code> is treated as an empty model.
 </dd>
@@ -323,8 +324,7 @@ The view model dictionary to extend. <code>None</code> is treated as an empty mo
 <dl>
 <dt><code> <span class="doc-parameter-annotation">Dict[str, Any]</span></code></dt>
 <dd>
-<p>The same dictionary with a <a href="render_partial.html#chameleon_partials.render_partial" class="gdls-link gdls-code">render_partial</a> key added (a new dictionary is returned</p>
-when <code>model</code> is <code>None</code>).
+The same dictionary with a <a href="render_partial.html#chameleon_partials.render_partial" class="gdls-link gdls-code">render_partial</a> key added, or a new dictionary when <code>model</code> is <code>None</code>.
 </dd>
 </dl>
 </div>
@@ -339,6 +339,14 @@ If <code>model</code> is not a dictionary (and not <code>None</code>).
 </dd>
 </dl>
 </div>
+</section>
+<section id="examples" class="level2 doc-examples">
+<h2 class="doc-examples">Examples</h2>
+<div class="sourceCode" id="cb2"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> chameleon_partials</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>model <span class="op">=</span> {<span class="st">'name'</span>: <span class="st">'Sarah'</span>}</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>model <span class="op">=</span> chameleon_partials.extend_model(model)</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="co"># model['render_partial'] is now callable from the template.</span></span></code></pre></div>
 
 
 </section>

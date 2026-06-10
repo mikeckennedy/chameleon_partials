@@ -268,6 +268,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#parameters" id="toc-parameters" class="nav-link active" data-scroll-target="#parameters">Parameters</a></li>
   <li><a href="#returns" id="toc-returns" class="nav-link" data-scroll-target="#returns">Returns</a></li>
   <li><a href="#raises" id="toc-raises" class="nav-link" data-scroll-target="#raises">Raises</a></li>
+  <li><a href="#examples" id="toc-examples" class="nav-link" data-scroll-target="#examples">Examples</a></li>
   </ul>
 </nav>
     </div>
@@ -298,7 +299,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 <div class="doc-usage-source">
 <p>Usage</p>
-<p><a href="https://github.com/mikeckennedy/chameleon_partials/blob/main/chameleon_partials/__init__.py#L89-L120" target="_blank" rel="noopener">Source</a></p>
+<p><a href="https://github.com/mikeckennedy/chameleon_partials/blob/main/chameleon_partials/__init__.py#L119-L160" target="_blank" rel="noopener">Source</a></p>
 </div>
 <div class="doc-signature doc-Kind.FUNCTION">
 <div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="sig-name">render_partial</span>(
@@ -307,7 +308,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 )</span></code></pre></div>
 </div>
 <div class="doc-text">
-<p>Looks up <code>template_file</code> in the folder registered with <a href="register_extensions.html#chameleon_partials.register_extensions" class="gdls-link gdls-code">register_extensions</a> and renders it with the supplied keyword arguments as its model. <a href="render_partial.html#chameleon_partials.render_partial" class="gdls-link gdls-code">render_partial</a> is injected into the model automatically, so a partial can render further nested partials.</p>
+<p>Looks up <code>template_file</code> in the folder registered with <a href="register_extensions.html#chameleon_partials.register_extensions" class="gdls-link gdls-code">register_extensions</a> and renders it with the supplied keyword arguments as its model. <a href="render_partial.html#chameleon_partials.render_partial" class="gdls-link gdls-code">render_partial</a> is injected into the model automatically, so a partial can render further nested partials. The fragment is rendered as text (<code>str</code>); any <code>bytes</code> values in the model are decoded as UTF-8.</p>
 </div>
 <section id="parameters" class="level2 doc-parameters">
 <h2 class="doc-parameters">Parameters</h2>
@@ -319,7 +320,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </dd>
 <dt><code><span class="doc-parameter-name">**template_data</span><span class="doc-parameter-annotation-sep">:</span> <span class="doc-parameter-annotation">Any</span></code></dt>
 <dd>
-Keyword arguments passed to the template as its model (the variables the template can reference).
+Keyword arguments passed to the template as its model (the variables the template can reference). Values may be any Python objects your template expressions use. The name <code>encoding</code> is reserved and cannot be used; <code>translate</code>, <code>target_language</code>, and <code>repeat</code> have special meaning to Chameleon.
 </dd>
 </dl>
 </div>
@@ -330,8 +331,7 @@ Keyword arguments passed to the template as its model (the variables the templat
 <dl>
 <dt><code> <span class="doc-parameter-annotation">HTML</span></code></dt>
 <dd>
-<p>An <code>HTML</code> wrapper whose <code>__html__</code> method yields the rendered markup, so the result is</p>
-treated as safe, pre-escaped HTML when embedded in another template.
+An <code>HTML</code> wrapper whose <code>__html__</code> method yields the rendered markup as safe, pre-escaped HTML.
 </dd>
 </dl>
 </div>
@@ -342,10 +342,22 @@ treated as safe, pre-escaped HTML when embedded in another template.
 <dl>
 <dt><code> <span class="doc-parameter-annotation">PartialsException</span></code></dt>
 <dd>
-If <a href="register_extensions.html#chameleon_partials.register_extensions" class="gdls-link gdls-code">register_extensions</a> has not been called yet.
+<p>If <a href="register_extensions.html#chameleon_partials.register_extensions" class="gdls-link gdls-code">register_extensions</a> has not been called yet.</p>
+</dd>
+<dt><code> <span class="doc-parameter-annotation">ValueError</span></code></dt>
+<dd>
+Propagated from Chameleon if <code>template_file</code> does not exist under the registered folder.
 </dd>
 </dl>
 </div>
+</section>
+<section id="examples" class="level2 doc-examples">
+<h2 class="doc-examples">Examples</h2>
+<div class="sourceCode" id="cb2"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> chameleon_partials</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>chameleon_partials.register_extensions(<span class="st">'path/to/templates'</span>)</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>html <span class="op">=</span> chameleon_partials.render_partial(<span class="st">'shared/partials/user_card.pt'</span>, name<span class="op">=</span><span class="st">'Sarah'</span>, age<span class="op">=</span><span class="dv">32</span>)</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(html.html_text)</span></code></pre></div>
 
 
 </section>

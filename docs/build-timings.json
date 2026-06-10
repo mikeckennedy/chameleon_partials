@@ -1,20 +1,25 @@
 {
-  "build_time": "2026-06-09T23:59:49Z",
-  "total_seconds": 3.468,
+  "build_time": "2026-06-10T01:46:43Z",
+  "total_seconds": 3.98,
   "pages": [
     {
-      "page": "reference/render_partial.qmd",
-      "seconds": 1.09,
+      "page": "index.qmd",
+      "seconds": 1.475,
       "frozen": false
     },
     {
-      "page": "index.qmd",
-      "seconds": 1.036,
+      "page": "reference/render_partial.qmd",
+      "seconds": 1.141,
       "frozen": false
     },
     {
       "page": "reference/extend_model.qmd",
-      "seconds": 0.206,
+      "seconds": 0.204,
+      "frozen": false
+    },
+    {
+      "page": "skill.md",
+      "seconds": 0.203,
       "frozen": false
     },
     {
@@ -23,28 +28,23 @@
       "frozen": false
     },
     {
-      "page": "skill.md",
-      "seconds": 0.194,
+      "page": "reference/index.qmd",
+      "seconds": 0.203,
       "frozen": false
     },
     {
       "page": "reference/PartialsException.qmd",
-      "seconds": 0.194,
+      "seconds": 0.191,
       "frozen": false
     },
     {
       "page": "skills.qmd",
-      "seconds": 0.192,
-      "frozen": false
-    },
-    {
-      "page": "reference/index.qmd",
-      "seconds": 0.181,
+      "seconds": 0.185,
       "frozen": false
     },
     {
       "page": "license.qmd",
-      "seconds": 0.172,
+      "seconds": 0.175,
       "frozen": false
     }
   ]

@@ -1,6 +1,21 @@
 """
 chameleon_partials - Simple reuse of partial HTML page templates in the
 Chameleon template language for Python web frameworks.
+
+Register your template folder once at application startup, then call `render_partial`
+from any Chameleon template to insert a reusable HTML fragment, passing keyword
+arguments as the fragment's model. Partials can nest: every partial automatically
+receives `render_partial`, so fragments can compose further fragments. Works with any
+framework that renders Chameleon templates (Pyramid, FastAPI, and friends).
+
+A minimal quickstart:
+
+```python
+import chameleon_partials
+
+chameleon_partials.register_extensions('path/to/templates')
+html = chameleon_partials.render_partial('shared/partials/video_image.pt', video=video)
+```
 """
 
 __version__ = '0.1.0'
@@ -12,7 +27,7 @@ from typing import Any, Dict, Optional
 
 from chameleon import PageTemplate, PageTemplateLoader
 
-has_registered_extensions = False
+has_registered_extensions: bool = False
 
 __templates: Optional[PageTemplateLoader] = None
 template_path: Optional[str] = None
@@ -23,20 +38,24 @@ class PartialsException(Exception):
 
     Examples include registering with a missing template folder, rendering a partial
     before calling `register_extensions`, or passing a non-dictionary model to
-    `extend_model`.
+    `extend_model`. Errors raised by Chameleon itself, such as the `ValueError` for a
+    missing template file, are propagated unchanged rather than wrapped in this type.
     """
 
 
-def register_extensions(template_folder: str, auto_reload: bool = False, cache_init: bool = True):
+def register_extensions(template_folder: str, auto_reload: bool = False, cache_init: bool = True) -> None:
     """Register chameleon_partials with Chameleon so partials can be rendered.
 
     Call this once during application startup, before any template is rendered. It builds a
     Chameleon `PageTemplateLoader` rooted at `template_folder` and stores it in module-level
-    state that `render_partial` uses to locate templates.
+    state that `render_partial` uses to locate templates. Registration is process-wide and is
+    not guarded by a lock, so call it from normal single-threaded startup code rather than
+    from concurrent request handlers.
 
     Args:
         template_folder: Path to the root folder containing your Chameleon templates (with a
-            `partials` subfolder by convention). Must be an existing directory.
+            `partials` subfolder by convention). Must be an existing directory. Partials are
+            later looked up by path relative to this folder.
         auto_reload: When `True`, Chameleon reloads a template from disk whenever the file
             changes. Useful during development; leave `False` in production.
         cache_init: When `True` (the default), calling this again after a previous
@@ -46,6 +65,14 @@ def register_extensions(template_folder: str, auto_reload: bool = False, cache_i
 
     Raises:
         PartialsException: If `template_folder` is empty or is not an existing directory.
+
+    Examples:
+        ```python
+        import chameleon_partials
+
+        # At startup; use auto_reload=True while developing.
+        chameleon_partials.register_extensions('path/to/templates', auto_reload=True)
+        ```
     """
     global has_registered_extensions
     global __templates, template_path
@@ -76,13 +103,16 @@ class HTML:
     `render_partial` returns one of these. Chameleon (and other template engines) call an
     object's `__html__` method when present, so the wrapped markup is inserted verbatim
     instead of being escaped. This type is internal and is not part of the public `__all__`
-    API.
+    API; read the `html_text` attribute when you need the raw markup, for example in tests.
+
+    Attributes:
+        html_text: The rendered markup as a `str`.
     """
 
-    def __init__(self, html_text: str):
+    def __init__(self, html_text: str) -> None:
         self.html_text: str = html_text
 
-    def __html__(self):
+    def __html__(self) -> str:
         return self.html_text
 
 
@@ -91,51 +121,70 @@ def render_partial(template_file: str, **template_data: Any) -> HTML:
 
     Looks up `template_file` in the folder registered with `register_extensions` and renders
     it with the supplied keyword arguments as its model. `render_partial` is injected into the
-    model automatically, so a partial can render further nested partials.
+    model automatically, so a partial can render further nested partials. The fragment is
+    rendered as text (`str`); any `bytes` values in the model are decoded as UTF-8.
 
     Args:
         template_file: Path to the partial, relative to the registered templates folder, for
             example `shared/partials/video_image.pt`.
         **template_data: Keyword arguments passed to the template as its model (the variables
-            the template can reference).
+            the template can reference). Values may be any Python objects your template
+            expressions use. The name `encoding` is reserved and cannot be used; `translate`,
+            `target_language`, and `repeat` have special meaning to Chameleon.
 
     Returns:
-        An `HTML` wrapper whose `__html__` method yields the rendered markup, so the result is
-        treated as safe, pre-escaped HTML when embedded in another template.
+        An `HTML` wrapper whose `__html__` method yields the rendered markup as safe, pre-escaped HTML.
 
     Raises:
         PartialsException: If `register_extensions` has not been called yet.
+        ValueError: Propagated from Chameleon if `template_file` does not exist under the registered folder.
+
+    Examples:
+        ```python
+        import chameleon_partials
+
+        chameleon_partials.register_extensions('path/to/templates')
+        html = chameleon_partials.render_partial('shared/partials/user_card.pt', name='Sarah', age=32)
+        print(html.html_text)
+        ```
     """
     if not has_registered_extensions:
         raise PartialsException("You must call register_extensions() before this function can be used.")
 
-    if template_data is None:
-        template_data = {}
-
     if 'render_partial' not in template_data:
         template_data['render_partial'] = render_partial
 
+    assert __templates is not None  # Guaranteed by the has_registered_extensions guard above.
     page: PageTemplate = __templates[template_file]
     html_source = page.render(encoding='utf-8', **template_data)
     return HTML(html_source)
 
 
-def extend_model(model: Dict[str, Any]) -> Dict[str, Any]:
+def extend_model(model: Optional[Dict[str, Any]]) -> Dict[str, Any]:
     """Add `render_partial` to a view model so templates can call it.
 
     Use this in frameworks where a view returns a model dictionary (for example FastAPI) and
     you need `render_partial` available inside the template. For Pyramid, prefer the
-    `BeforeRender` middleware shown in the README instead.
+    `BeforeRender` middleware shown in the README instead. Any existing `render_partial` key
+    in the model is replaced.
 
     Args:
         model: The view model dictionary to extend. `None` is treated as an empty model.
 
     Returns:
-        The same dictionary with a `render_partial` key added (a new dictionary is returned
-        when `model` is `None`).
+        The same dictionary with a `render_partial` key added, or a new dictionary when `model` is `None`.
 
     Raises:
         PartialsException: If `model` is not a dictionary (and not `None`).
+
+    Examples:
+        ```python
+        import chameleon_partials
+
+        model = {'name': 'Sarah'}
+        model = chameleon_partials.extend_model(model)
+        # model['render_partial'] is now callable from the template.
+        ```
     """
     if model is None:
         model = {}

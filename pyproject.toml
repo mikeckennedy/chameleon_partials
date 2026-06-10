@@ -8,21 +8,22 @@ description = "Simple reuse of partial HTML page templates in the Chameleon temp
 readme = "README.md"
 license = { text = "MIT" }
 authors = [{ name = "Michael Kennedy", email = "michael@talkpython.fm" }]
-requires-python = ">=3.6"
+requires-python = ">=3.9"
 # version, dependencies, and optional-dependencies are read dynamically below so the
 # package version stays single-sourced in chameleon_partials/__init__.py and the
 # requirements*.txt files remain the source of truth for dependencies.
 dynamic = ["version", "dependencies", "optional-dependencies"]
 classifiers = [
-    "Development Status :: 2 - Pre-Alpha",
+    "Development Status :: 5 - Production/Stable",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.6",
-    "Programming Language :: Python :: 3.7",
-    "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
 ]
 
 [project.urls]
@@ -32,6 +33,11 @@ Documentation = "https://mkennedy.codes/docs/chameleon-partials/"
 
 [tool.setuptools]
 packages = ["chameleon_partials"]
+
+# Ship the PEP 561 marker so type checkers consume the package's inline annotations.
+# Explicit because the build floor (setuptools>=64) predates automatic py.typed inclusion.
+[tool.setuptools.package-data]
+chameleon_partials = ["py.typed"]
 
 [tool.setuptools.dynamic]
 version = { attr = "chameleon_partials.__version__" }

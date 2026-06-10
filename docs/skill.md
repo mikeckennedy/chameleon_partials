@@ -3,7 +3,7 @@ name: chameleon-partials
 description: >
   Simple reuse of partial HTML page templates in the Chameleon template language for Python web frameworks. Use when writing Python code that uses the chameleon_partials package.
 license: MIT
-compatibility: Requires Python >=3.6.
+compatibility: Requires Python >=3.9.
 ---
 
 # Chameleon Partials

@@ -223,11 +223,12 @@ section.level2:first-of-type > h2:first-child,
 </section>
 <section id="meta" class="level3">
 <h3 class="anchored" data-anchor-id="meta">Meta</h3>
-<p><strong>Requires:</strong> Python <code>&gt;=3.6</code></p>
+<p><strong>Requires:</strong> Python <code>&gt;=3.9</code></p>
 </section>
 </div></div><section id="chameleon-partials" class="level1">
 <h1>Chameleon Partials</h1>
 <p>Simple reuse of partial HTML page templates in the Chameleon template language for Python web frameworks. (There is also a <a href="https://github.com/mikeckennedy/jinja_partials">Jinja2/Flask version here</a>.)</p>
+<p><strong>Docs</strong>: Full API documentation is at <a href="https://mkennedy.codes/docs/chameleon-partials/">mkennedy.codes/docs/chameleon-partials</a>.</p>
 <section id="overview" class="level2">
 <h2 class="anchored" data-anchor-id="overview">Overview</h2>
 <p>When building real-world web apps with Chameleon, it’s easy to end up with repeated HTML fragments. Just like organizing code for reuse, it would be ideal to reuse smaller sections of HTML template code. That’s what this library is all about.</p>
@@ -235,7 +236,12 @@ section.level2:first-of-type > h2:first-child,
 <section id="example" class="level2">
 <h2 class="anchored" data-anchor-id="example">Example</h2>
 <p>This project comes with a sample Pyramid application (see the <code>example</code> folder). This app displays videos that can be played on YouTube. The image, author subtitle, and view count are reused throughout the app. Here’s a visual:</p>
-<p><img src="https://raw.githubusercontent.com/mikeckennedy/chameleon_partials/main/readme_resources/reused-html-visual.png" class="img-fluid"></p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://raw.githubusercontent.com/mikeckennedy/chameleon_partials/main/readme_resources/reused-html-visual.png" class="img-fluid figure-img"></p>
+<figcaption>Video image, author, and view count HTML reused across pages of the demo app</figcaption>
+</figure>
+</div>
 <p>Check out the <a href="https://github.com/mikeckennedy/chameleon_partials/tree/main/example"><strong>demo / example application</strong></a> to see it in action.</p>
 </section>
 <section id="installation" class="level2">
@@ -246,21 +252,24 @@ section.level2:first-of-type > h2:first-child,
 <h2 class="anchored" data-anchor-id="usage">Usage</h2>
 <p>Using the library is incredibly easy. The first step is to register the partial method with Chameleon. Do this once at app startup:</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pathlib <span class="im">import</span> Path</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> chameleon_partials</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> main(_, <span class="op">**</span>settings):</span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    <span class="co">""" This function returns a Pyramid WSGI application.</span></span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="co">    """</span></span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">with</span> Configurator(settings<span class="op">=</span>settings) <span class="im">as</span> config:</span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>        config.include(<span class="st">'pyramid_chameleon'</span>)</span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>        config.include(<span class="st">'.routes'</span>)</span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>        config.scan()</span>
-<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>        </span>
-<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Register the extension for working with Chameleon.</span></span>
-<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>        folder <span class="op">=</span> (Path(<span class="va">__file__</span>).parent <span class="op">/</span> <span class="st">"templates"</span>).as_posix()</span>
-<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>        chameleon_partials.register_extensions(folder, auto_reload<span class="op">=</span><span class="va">True</span>, cache_init<span class="op">=</span><span class="va">True</span>)</span>
-<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> config.make_wsgi_app()</span></code></pre></div>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pyramid.config <span class="im">import</span> Configurator</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> chameleon_partials</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> main(_, <span class="op">**</span>settings):</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    <span class="co">""" This function returns a Pyramid WSGI application.</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="co">    """</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">with</span> Configurator(settings<span class="op">=</span>settings) <span class="im">as</span> config:</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>        config.include(<span class="st">'pyramid_chameleon'</span>)</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>        config.include(<span class="st">'.routes'</span>)</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>        config.scan()</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>        </span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Register the extension for working with Chameleon.</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>        folder <span class="op">=</span> (Path(<span class="va">__file__</span>).parent <span class="op">/</span> <span class="st">"templates"</span>).as_posix()</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>        chameleon_partials.register_extensions(folder, auto_reload<span class="op">=</span><span class="va">True</span>, cache_init<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> config.make_wsgi_app()</span></code></pre></div>
 <p>Next, you define your main HTML (Chameleon) templates as usual. Then define your partial templates. I recommend locating and naming them accordingly:</p>
 <pre><code>├── templates
 │&nbsp;&nbsp; ├── errors
@@ -279,7 +288,7 @@ section.level2:first-of-type > h2:first-child,
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="ot">     class</span><span class="op">=</span><span class="st">"img img-responsive ${ ' '.join(classes or []) }"</span></span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="ot">     alt</span><span class="op">=</span><span class="st">"${ video.title }"</span></span>
 <span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="ot">     title</span><span class="op">=</span><span class="st">"${ video.title }"</span><span class="dt">&gt;</span></span></code></pre></div>
-<p>Notice that an object called <code>video</code> and list of classes are passed in as the model.</p>
+<p>Notice that an object called <code>video</code> and a list of classes are passed in as the model.</p>
 <p>Templates can also be nested. Here is the whole single video fragment with the image as well as other info linking out to YouTube:</p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode html"><code class="sourceCode html"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;</span><span class="kw">div</span><span class="dt">&gt;</span></span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&lt;</span><span class="kw">a</span><span class="ot"> href</span><span class="op">=</span><span class="st">"https://www.youtube.com/watch?v=${ video.id }"</span><span class="ot"> target</span><span class="op">=</span><span class="st">"_blank"</span><span class="dt">&gt;</span></span>
@@ -291,9 +300,9 @@ section.level2:first-of-type > h2:first-child,
 <span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;/</span><span class="kw">div</span><span class="dt">&gt;</span></span></code></pre></div>
 <p>Now you see the <a href="reference/render_partial.html#chameleon_partials.render_partial" class="gdls-link gdls-code">render_partial()</a> method. It takes the subpath into the templates folder and any model data passed in as keyword arguments.</p>
 <p>We can finally generate the list of video blocks as follows:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode html"><code class="sourceCode html"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;</span><span class="kw">div</span><span class="ot"> class</span><span class="op">=</span><span class="st">"video"</span><span class="ot"> tal:repeat</span><span class="op">=</span><span class="st">"v videos"</span><span class="dt">&gt;</span></span>
+<div class="sourceCode" id="cb5"><pre class="sourceCode html"><code class="sourceCode html"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;</span><span class="kw">span</span><span class="ot"> class</span><span class="op">=</span><span class="st">"video"</span><span class="ot"> tal:repeat</span><span class="op">=</span><span class="st">"v videos"</span><span class="dt">&gt;</span></span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    ${ render_partial('shared/partials/video_square.pt', video=v) }</span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;/</span><span class="kw">div</span><span class="dt">&gt;</span></span></code></pre></div>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;/</span><span class="kw">span</span><span class="dt">&gt;</span></span></code></pre></div>
 <p>This time, we reframe each item in the list from the outer template (called <code>v</code>) as the <code>video</code> model in the inner HTML section.</p>
 </section>
 <section id="the-view-methods" class="level2">
@@ -309,9 +318,9 @@ section.level2:first-of-type > h2:first-child,
 <span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a><span class="at">@subscriber</span>(BeforeRender)</span>
 <span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> add_global(event):</span>
 <span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>    event[<span class="st">'render_partial'</span>] <span class="op">=</span> chameleon_partials.render_partial</span></code></pre></div>
-<p>For other frameworks using Chameleon (e.g.&nbsp;FastAPI), you can append the render_partial to the resulting dictionary. We’ve built a simple function to keep this fool-proof:</p>
+<p>For other frameworks using Chameleon (e.g.&nbsp;FastAPI), you can add <a href="reference/render_partial.html#chameleon_partials.render_partial" class="gdls-link gdls-code">render_partial</a> to the resulting dictionary. We’ve built a simple function to keep this fool-proof:</p>
 <div class="sourceCode" id="cb7"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>chameleon_partials.extend_model(model)</span></code></pre></div>
-<p>Here’s a typical view method that uses <a href="reference/render_partial.html#chameleon_partials.render_partial" class="gdls-link gdls-code">render_partial</a>, notice the use of extending the model before passing it to the view:</p>
+<p>Here’s a typical view method that uses <a href="reference/render_partial.html#chameleon_partials.render_partial" class="gdls-link gdls-code">render_partial</a>, notice the use of extending the model before passing it to the template (the example app’s views skip this because the middleware above handles it):</p>
 <div class="sourceCode" id="cb8"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="at">@view_config</span>(route_name<span class="op">=</span><span class="st">'listing'</span>, renderer<span class="op">=</span><span class="st">'demo_chameleon_partials:templates/home/listing.pt'</span>)</span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> listing(_):</span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    videos <span class="op">=</span> video_service.all_videos()</span>

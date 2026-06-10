@@ -3,6 +3,8 @@
 Simple reuse of partial HTML page templates in the Chameleon template language for Python web frameworks.
 (There is also a [Jinja2/Flask version here](https://github.com/mikeckennedy/jinja_partials).)
 
+**Docs**: Full API documentation is at [mkennedy.codes/docs/chameleon-partials](https://mkennedy.codes/docs/chameleon-partials/).
+
 ## Overview
 
 When building real-world web apps with Chameleon, it's easy to end up with repeated HTML fragments.
@@ -15,7 +17,7 @@ This project comes with a sample Pyramid application (see the `example` folder).
 that can be played on YouTube. The image, author subtitle, and view count are reused throughout the
 app. Here's a visual:
 
-![](https://raw.githubusercontent.com/mikeckennedy/chameleon_partials/main/readme_resources/reused-html-visual.png)
+![Video image, author, and view count HTML reused across pages of the demo app](https://raw.githubusercontent.com/mikeckennedy/chameleon_partials/main/readme_resources/reused-html-visual.png)
 
 Check out the [**demo / example application**](https://github.com/mikeckennedy/chameleon_partials/tree/main/example) 
 to see it in action. 
@@ -31,6 +33,9 @@ Do this once at app startup:
 
 ```python
 from pathlib import Path
+
+from pyramid.config import Configurator
+
 import chameleon_partials
 
 def main(_, **settings):
@@ -77,7 +82,7 @@ the example app:
      title="${ video.title }">
 ```
 
-Notice that an object called `video` and list of classes are passed in as the model.
+Notice that an object called `video` and a list of classes are passed in as the model.
 
 Templates can also be nested. Here is the whole single video fragment with the image as well as other info
 linking out to YouTube:
@@ -99,9 +104,9 @@ any model data passed in as keyword arguments.
 We can finally generate the list of video blocks as follows:
 
 ```html
-<div class="video" tal:repeat="v videos">
+<span class="video" tal:repeat="v videos">
     ${ render_partial('shared/partials/video_square.pt', video=v) }
-</div>
+</span>
 ```
 
 This time, we reframe each item in the list from the outer template (called `v`) as the `video` model
@@ -127,7 +132,7 @@ def add_global(event):
     event['render_partial'] = chameleon_partials.render_partial
 ```
 
-For other frameworks using Chameleon (e.g. FastAPI), you can append the render_partial to the
+For other frameworks using Chameleon (e.g. FastAPI), you can add `render_partial` to the
 resulting dictionary. We've built a simple function to keep this fool-proof: 
 
 ```python
@@ -135,7 +140,8 @@ chameleon_partials.extend_model(model)
 ```
 
 Here's a typical view method that uses `render_partial`, notice the use of extending the 
-model before passing it to the view:
+model before passing it to the template (the example app's views skip this because the 
+middleware above handles it):
 
 ```python
 @view_config(route_name='listing', renderer='demo_chameleon_partials:templates/home/listing.pt')

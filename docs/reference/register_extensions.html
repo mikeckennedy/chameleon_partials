@@ -267,6 +267,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <ul class="collapse">
   <li><a href="#parameters" id="toc-parameters" class="nav-link active" data-scroll-target="#parameters">Parameters</a></li>
   <li><a href="#raises" id="toc-raises" class="nav-link" data-scroll-target="#raises">Raises</a></li>
+  <li><a href="#examples" id="toc-examples" class="nav-link" data-scroll-target="#examples">Examples</a></li>
   </ul>
 </nav>
     </div>
@@ -297,7 +298,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 <div class="doc-usage-source">
 <p>Usage</p>
-<p><a href="https://github.com/mikeckennedy/chameleon_partials/blob/main/chameleon_partials/__init__.py#L30-L70" target="_blank" rel="noopener">Source</a></p>
+<p><a href="https://github.com/mikeckennedy/chameleon_partials/blob/main/chameleon_partials/__init__.py#L46-L97" target="_blank" rel="noopener">Source</a></p>
 </div>
 <div class="doc-signature doc-Kind.FUNCTION">
 <div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="sig-name">register_extensions</span>(
@@ -307,7 +308,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 )</span></code></pre></div>
 </div>
 <div class="doc-text">
-<p>Call this once during application startup, before any template is rendered. It builds a Chameleon <code>PageTemplateLoader</code> rooted at <code>template_folder</code> and stores it in module-level state that <a href="render_partial.html#chameleon_partials.render_partial" class="gdls-link gdls-code">render_partial</a> uses to locate templates.</p>
+<p>Call this once during application startup, before any template is rendered. It builds a Chameleon <code>PageTemplateLoader</code> rooted at <code>template_folder</code> and stores it in module-level state that <a href="render_partial.html#chameleon_partials.render_partial" class="gdls-link gdls-code">render_partial</a> uses to locate templates. Registration is process-wide and is not guarded by a lock, so call it from normal single-threaded startup code rather than from concurrent request handlers.</p>
 </div>
 <section id="parameters" class="level2 doc-parameters">
 <h2 class="doc-parameters">Parameters</h2>
@@ -315,7 +316,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <dl>
 <dt><code><span class="doc-parameter-name">template_folder</span><span class="doc-parameter-annotation-sep">:</span> <span class="doc-parameter-annotation">str</span></code></dt>
 <dd>
-<p>Path to the root folder containing your Chameleon templates (with a <code>partials</code> subfolder by convention). Must be an existing directory.</p>
+<p>Path to the root folder containing your Chameleon templates (with a <code>partials</code> subfolder by convention). Must be an existing directory. Partials are later looked up by path relative to this folder.</p>
 </dd>
 <dt><code><span class="doc-parameter-name">auto_reload</span><span class="doc-parameter-annotation-sep">:</span> <span class="doc-parameter-annotation">bool</span> <span class="doc-parameter-default-sep op">=</span> <span class="doc-parameter-default"><span class="va">False</span></span></code></dt>
 <dd>
@@ -338,6 +339,13 @@ If <code>template_folder</code> is empty or is not an existing directory.
 </dd>
 </dl>
 </div>
+</section>
+<section id="examples" class="level2 doc-examples">
+<h2 class="doc-examples">Examples</h2>
+<div class="sourceCode" id="cb2"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> chameleon_partials</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="co"># At startup; use auto_reload=True while developing.</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>chameleon_partials.register_extensions(<span class="st">'path/to/templates'</span>, auto_reload<span class="op">=</span><span class="va">True</span>)</span></code></pre></div>
 
 
 </section>
