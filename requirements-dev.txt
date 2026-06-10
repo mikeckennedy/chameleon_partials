@@ -1,5 +1,8 @@
 pytest
 pytest-clarity
+# Type checkers; the package ships a py.typed marker, so keep its annotations honest.
+ty
+pyrefly
 # great-docs builds the documentation site (Phase 1 of the docs playbook). The
 # marker keeps `pip install .[dev]` working on Python 3.10 and below, where
 # great-docs (which requires >=3.11) is simply skipped.

@@ -12,8 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Google-style docstrings, complete type annotations, and runnable usage examples for
   the public API (`register_extensions`, `render_partial`, `extend_model`,
   `PartialsException`) and the internal `HTML` wrapper.
-- PEP 561 `py.typed` marker, so mypy and pyright consume the package's inline type
-  annotations.
+- PEP 561 `py.typed` marker, so type checkers consume the package's inline type
+  annotations; the package checks clean under `ty` and `pyrefly`, which join the dev
+  requirements.
 - Documentation site rendered from those docstrings with Great Docs, published at
   https://mkennedy.codes/docs/chameleon-partials/. Includes `scripts/build_docs.py`
   and `scripts/serve_docs.py`; the built site is committed in `docs/`, and
