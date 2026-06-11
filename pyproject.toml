@@ -9,6 +9,30 @@ readme = "README.md"
 license = { text = "MIT" }
 authors = [{ name = "Michael Kennedy", email = "michael@talkpython.fm" }]
 requires-python = ">=3.9"
+keywords = [
+    "chameleon",
+    "partials",
+    "templates",
+    "templating",
+    "template-engine",
+    "html",
+    "rendering",
+    "render-partial",
+    "components",
+    "fragments",
+    "reusable",
+    "web",
+    "web-development",
+    "web-framework",
+    "pyramid",
+    "fastapi",
+    "htmx",
+    "frontend",
+    "jinja-partials",
+    "zpt",
+    "tal",
+    "metal",
+]
 # version, dependencies, and optional-dependencies are read dynamically below so the
 # package version stays single-sourced in chameleon_partials/__init__.py and the
 # requirements*.txt files remain the source of truth for dependencies.
@@ -24,6 +48,7 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3.15",
 ]
 
 [project.urls]
