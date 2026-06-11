@@ -1,36 +1,44 @@
 import os
+
+import pytest
+import webtest
+from demo_chameleon_partials import main
 from pyramid.paster import get_appsettings
 from pyramid.scripting import prepare
 from pyramid.testing import DummyRequest, testConfig
-import pytest
-import webtest
-
-from demo_chameleon_partials import main
 
 
 def pytest_addoption(parser):
     parser.addoption('--ini', action='store', metavar='INI_FILE')
+
 
 @pytest.fixture(scope='session')
 def ini_file(request):
     # potentially grab this path from a pytest option
     return os.path.abspath(request.config.option.ini or 'testing.ini')
 
+
 @pytest.fixture(scope='session')
 def app_settings(ini_file):
     return get_appsettings(ini_file)
+
 
 @pytest.fixture(scope='session')
 def app(app_settings):
     return main({}, **app_settings)
 
+
 @pytest.fixture
 def testapp(app):
-    testapp = webtest.TestApp(app, extra_environ={
-        'HTTP_HOST': 'example.com',
-    })
+    testapp = webtest.TestApp(
+        app,
+        extra_environ={
+            'HTTP_HOST': 'example.com',
+        },
+    )
 
     return testapp
+
 
 @pytest.fixture
 def app_request(app):
@@ -45,6 +53,7 @@ def app_request(app):
         request = env['request']
         request.host = 'example.com'
         yield request
+
 
 @pytest.fixture
 def dummy_request():
@@ -63,6 +72,7 @@ def dummy_request():
     request.host = 'example.com'
 
     return request
+
 
 @pytest.fixture
 def dummy_config(dummy_request):

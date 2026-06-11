@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.2.0] - 2026-06-10
 
 ### Added
 
@@ -19,11 +19,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   https://mkennedy.codes/docs/chameleon-partials/. Includes `scripts/build_docs.py`
   and `scripts/serve_docs.py`; the built site is committed in `docs/`, and
   `great-docs` joins the `dev` extra (skipped automatically on Python < 3.11).
+- Project URLs in the package metadata for the PyPI sidebar — Issues, Changelog, and
+  Funding (GitHub Sponsors) — alongside the existing Homepage, Repository, and
+  Documentation links.
 - Pyramid `BeforeRender` middleware pattern, documented in the README and wired into
   the example app, so views do not have to add `render_partial` to every model by
   hand.
 - Test suite (`tests/test_rendering.py`) covering bare renders, partials with data,
   layouts, nested (recursive) partials, and error conditions.
+- Pytest configuration (`[tool.pytest.ini_options]`, `testpaths = ["tests"]`) so a bare
+  `pytest` from the repo root runs only the package's tests instead of erroring while
+  collecting the standalone `example/` app's suite (which needs Pyramid and WebTest).
 - This changelog.
 
 ### Changed
@@ -45,6 +51,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   be retried. (Behavior change.)
 - `extend_model`'s type annotation now accepts `None` (`Optional[Dict[str, Any]]`),
   matching its documented and actual behavior.
+- Ruff's `target-version` is now `py39` to match `requires-python` (was `py313`), so
+  Ruff won't rewrite code into newer-only idioms that would break on Python 3.9.
 - README accuracy: the Pyramid startup snippet now imports `Configurator`, the
   listing snippet matches the example app's template (`span`, not `div`), and several
   typos were corrected: "incredible easy", "subtitle of author", "them middleware",
@@ -70,5 +78,5 @@ Initial release.
 - Example Pyramid application (`example/`) showing video-card partials reused across
   pages, plus a README walkthrough.
 
-[Unreleased]: https://github.com/mikeckennedy/chameleon_partials/commits/main
+[0.2.0]: https://pypi.org/project/chameleon-partials/0.2.0/
 [0.1.0]: https://pypi.org/project/chameleon-partials/0.1.0/

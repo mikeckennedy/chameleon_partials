@@ -1,5 +1,5 @@
 # noinspection PyPackageRequirements
-from pyramid.events import subscriber, BeforeRender
+from pyramid.events import BeforeRender, subscriber
 
 import chameleon_partials
 

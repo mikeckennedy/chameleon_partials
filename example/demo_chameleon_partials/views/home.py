@@ -1,7 +1,6 @@
 # noinspection PyPackageRequirements
 from pyramid.view import view_config
 
-import chameleon_partials
 from demo_chameleon_partials.services import video_service
 
 

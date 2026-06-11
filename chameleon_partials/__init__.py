@@ -18,9 +18,14 @@ html = chameleon_partials.render_partial('shared/partials/video_image.pt', video
 ```
 """
 
-__version__ = '0.1.0'
+__version__ = '0.2.0'
 __author__ = 'Michael Kennedy <michael@talkpython.fm>'
-__all__ = ['register_extensions', 'render_partial', 'PartialsException', 'extend_model', ]
+__all__ = [
+    'register_extensions',
+    'render_partial',
+    'PartialsException',
+    'extend_model',
+]
 
 import os
 from typing import Any, Dict, Optional
@@ -149,7 +154,7 @@ def render_partial(template_file: str, **template_data: Any) -> HTML:
         ```
     """
     if not has_registered_extensions:
-        raise PartialsException("You must call register_extensions() before this function can be used.")
+        raise PartialsException('You must call register_extensions() before this function can be used.')
 
     if 'render_partial' not in template_data:
         template_data['render_partial'] = render_partial
@@ -190,7 +195,7 @@ def extend_model(model: Optional[Dict[str, Any]]) -> Dict[str, Any]:
         model = {}
 
     if not isinstance(model, dict):
-        raise PartialsException("The model must be a dictionary.")
+        raise PartialsException('The model must be a dictionary.')
 
     model['render_partial'] = render_partial
     return model

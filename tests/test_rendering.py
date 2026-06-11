@@ -1,4 +1,7 @@
-# Testing placeholder. We should write some tests.
+"""Rendering tests for chameleon_partials: bare partials, partials with model data,
+layouts, nested (recursive) partials, and error conditions (missing template, and
+rendering before register_extensions)."""
+
 from pathlib import Path
 
 # noinspection PyPackageRequirements
@@ -9,13 +12,13 @@ import chameleon_partials
 
 @pytest.fixture
 def registered_extension():
-    folder = (Path(__file__).parent / "test_templates").as_posix()
+    folder = (Path(__file__).parent / 'test_templates').as_posix()
     chameleon_partials.register_extensions(folder, auto_reload=True, cache_init=True)
 
     # Allow test to work with extensions as registered
-    print("********************************************")
+    print('********************************************')
     print(folder)
-    print("********************************************")
+    print('********************************************')
     yield
 
     # Roll back the fact that we registered the extensions for future tests.
@@ -35,19 +38,19 @@ def test_render_with_data(registered_extension):
 
 
 def test_render_with_layout(registered_extension):
-    value_text = "The message is clear"
+    value_text = 'The message is clear'
     html: chameleon_partials.HTML = chameleon_partials.render_partial('render/with_layout.pt', message=value_text)
     assert '<title>Chameleon Partials Test Template</title>' in html.html_text
     assert value_text in html.html_text
 
 
 def test_render_recursive(registered_extension):
-    value_text = "The message is clear"
-    inner_text = "The message is recursive"
+    value_text = 'The message is clear'
+    inner_text = 'The message is recursive'
 
-    html: chameleon_partials.HTML = chameleon_partials.render_partial('render/recursive.pt',
-                                                                      message=value_text,
-                                                                      inner=inner_text)
+    html: chameleon_partials.HTML = chameleon_partials.render_partial(
+        'render/recursive.pt', message=value_text, inner=inner_text
+    )
     assert value_text in html.html_text
     assert inner_text in html.html_text
 

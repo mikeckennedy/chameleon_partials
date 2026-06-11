@@ -35,8 +35,10 @@ lint.per-file-ignores = { }
 # Allow unused variables when underscore-prefixed.
 # dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 
-# Assume Python 3.13.
-target-version = "py313"
+# Match the package's minimum supported Python (requires-python >=3.9) so Ruff never
+# rewrites code into newer-only idioms (e.g. `Dict[...]` -> `dict | None`) that would
+# break at runtime on 3.9.
+target-version = "py39"
 
 #[tool.ruff.mccabe]
 ## Unlike Flake8, default to a complexity level of 10.

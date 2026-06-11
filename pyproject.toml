@@ -30,6 +30,9 @@ classifiers = [
 Homepage = "https://github.com/mikeckennedy/chameleon_partials"
 Repository = "https://github.com/mikeckennedy/chameleon_partials"
 Documentation = "https://mkennedy.codes/docs/chameleon-partials/"
+Issues = "https://github.com/mikeckennedy/chameleon_partials/issues"
+Changelog = "https://github.com/mikeckennedy/chameleon_partials/blob/main/CHANGELOG.md"
+Funding = "https://github.com/sponsors/mikeckennedy"
 
 [tool.setuptools]
 packages = ["chameleon_partials"]
@@ -45,3 +48,10 @@ dependencies = { file = ["requirements.txt"] }
 
 [tool.setuptools.dynamic.optional-dependencies]
 dev = { file = ["requirements-dev.txt"] }
+
+# Only collect this package's own tests by default. The `example/` demo is a
+# standalone Pyramid project with its own test suite and dependencies (Pyramid,
+# WebTest — see example/setup.py's `testing` extra), so a bare `pytest` from the
+# repo root must not try to import them.
+[tool.pytest.ini_options]
+testpaths = ["tests"]

@@ -127,7 +127,7 @@ Partials can render other partials recursively:
 - Uses Ruff for linting and formatting with configuration in `ruff.toml`
 - Line length: 120 characters
 - Single quotes preferred
-- Python 3.13 target version
+- Ruff `target-version` is `py39`, matching the package's `requires-python` floor
 
 ### Testing Strategy
 - Tests located in `tests/` directory
