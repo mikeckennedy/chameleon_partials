@@ -41,6 +41,11 @@ pypi: true
 mcp:
   enabled: false
 
+skill:
+  # Hand-written prose injected into the generated skill body — things the API
+  # signatures can't convey. Adapted from the chameleon-partials_reference.md agent guide.
+  extra_body: skill_extra_body.md
+
 # Umami analytics — merged into Quarto's format.html.include-in-header, so it lands in
 # the <head> of every generated page.
 include_in_header:
