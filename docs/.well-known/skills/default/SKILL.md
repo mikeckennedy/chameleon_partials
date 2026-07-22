@@ -16,6 +16,16 @@ Simple reuse of partial HTML page templates in the Chameleon template language f
 pip install chameleon-partials
 ```
 
+## When to use what
+
+| Need | Use |
+|------|-----|
+| Insert a reusable HTML fragment inside a Chameleon template | `${ render_partial('shared/partials/fragment.pt', key=value) }` |
+| Make render_partial available in every Pyramid template | `BeforeRender subscriber: event['render_partial'] = chameleon_partials.render_partial` |
+| Make render_partial available in other frameworks (FastAPI, plain WSGI, ...) | `return chameleon_partials.extend_model(model) from the view` |
+| Get a rendered fragment as a plain string from Python (tests, HTMX, email) | `render_partial(template_file, **model).html_text` |
+| Point tests or a second setup call at a different template folder | `register_extensions(folder, cache_init=False), or reset has_registered_extensions first` |
+
 ## API overview
 
 ### Setup
@@ -36,6 +46,24 @@ Render partial templates and expose render_partial to your view models.
 Errors raised by the library.
 
 - `PartialsException`: Raised when chameleon_partials is configured or used incorrectly
+
+## Gotchas
+
+1. register_extensions() is one-shot by default: with cache_init=True, later calls after one successful registration are silent no-ops. Pass cache_init=False or reset chameleon_partials.has_registered_extensions to re-point it.
+2. render_partial() paths are always relative to the registered template folder — never to the calling template — even when called from inside another partial.
+3. PartialsException covers misuse only (rendering before registration, empty/non-directory folder, non-dict model). A missing template file raises Chameleon's ValueError, unwrapped.
+4. render_partial() returns an HTML wrapper, not a str — Chameleon inserts it unescaped via __html__(); read .html_text for the raw markup. The HTML class is not exported in __all__.
+5. The model name 'encoding' is reserved (render_partial passes encoding='utf-8' internally); 'translate', 'target_language', and 'repeat' have special meaning to Chameleon.
+6. extend_model() unconditionally replaces any existing 'render_partial' key in the model; render_partial() itself only injects the key when it is missing.
+7. Registration is process-wide module state and is not lock-guarded — call register_extensions() from single-threaded startup code, not from concurrent request handlers.
+
+## Best practices
+
+- Call register_extensions(template_folder, auto_reload=dev_mode) exactly once at application startup, before any template renders; leave auto_reload=False in production.
+- In Pyramid, wire render_partial globally with a BeforeRender subscriber; in other frameworks, return chameleon_partials.extend_model(model) from each view.
+- Keep partials as bare HTML fragments under shared/partials/ and prefix METAL layouts with an underscore (shared/_layout.pt).
+- Build the folder path with (Path(__file__).parent / 'templates').as_posix() so it is package-relative and uses forward slashes on every platform.
+- In test fixtures, reset chameleon_partials.has_registered_extensions = False in teardown so the next test can register its own template folder.
 
 ## End-to-end wiring
 
@@ -155,10 +183,6 @@ def registered_extension():
 ```
 
 `render_partial` returns an `HTML` wrapper (its `__html__()` makes engines insert the markup unescaped); in tests or HTMX/email code, read the raw string from `.html_text`.
-
-## Error contract
-
-`PartialsException` covers misuse and misconfiguration only: rendering before `register_extensions()`, an empty or non-directory template folder, or a non-dict model to `extend_model()`. Chameleon's own errors propagate unwrapped — a missing template file raises Chameleon's `ValueError`, not `PartialsException`.
 
 ## Fetching these docs as Markdown
 

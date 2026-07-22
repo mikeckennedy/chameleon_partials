@@ -117,10 +117,6 @@ def registered_extension():
 
 `render_partial` returns an `HTML` wrapper (its `__html__()` makes engines insert the markup unescaped); in tests or HTMX/email code, read the raw string from `.html_text`.
 
-## Error contract
-
-`PartialsException` covers misuse and misconfiguration only: rendering before `register_extensions()`, an empty or non-directory template folder, or a non-dict model to `extend_model()`. Chameleon's own errors propagate unwrapped — a missing template file raises Chameleon's `ValueError`, not `PartialsException`.
-
 ## Fetching these docs as Markdown
 
 Every page on the documentation site has a plain-Markdown twin: swap the `.html` extension for `.md` to get token-efficient source without the site chrome. For example https://mkennedy.codes/docs/chameleon-partials/reference/render_partial.html is also available at https://mkennedy.codes/docs/chameleon-partials/reference/render_partial.md. Prefer the `.md` form when reading these docs programmatically.
