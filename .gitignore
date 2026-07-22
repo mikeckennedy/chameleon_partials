@@ -140,3 +140,4 @@ dmypy.json
 .idea/inspectionProfiles/Project_Default.xml
 docs/build-timings.json
 uv.lock
+.DS_Store
