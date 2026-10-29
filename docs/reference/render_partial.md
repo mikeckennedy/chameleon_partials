@@ -41,7 +41,7 @@ An `HTML` wrapper whose `__html__` method yields the rendered markup as safe, pr
 If [register_extensions](register_extensions.md#chameleon_partials.register_extensions) has not been called yet.
 
 `ValueError`  
-Propagated from Chameleon if `template_file` does not exist under the registered folder.
+Propagated from Chameleon if `template_file` does not exist under the registered folder, and raised the same way (`Template not found: ...`) for a name that would load a file outside it: an absolute path, a `..` out of the folder, or a `package:path` spec.
 
 
 ## Examples

@@ -18,7 +18,7 @@ html = chameleon_partials.render_partial('shared/partials/video_image.pt', video
 ```
 """
 
-__version__ = '0.2.0'
+__version__ = '0.2.1'
 __author__ = 'Michael Kennedy <michael@talkpython.fm>'
 __all__ = [
     'register_extensions',

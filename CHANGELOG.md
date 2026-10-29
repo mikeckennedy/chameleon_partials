@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1] - 2026-10-28
+
+### Security
+
+- `render_partial` refuses names that would load a file outside the registered template folder: an absolute path, a `..` out of the folder, or a `package:path` spec. These used to reach Chameleon's loader as is, which loaded the file and ran it as a template; they now raise Chameleon's own `ValueError` (`Template not found: ...`), as a missing file does. A `..` that stays inside the folder still works, and the check is lexical, so a symlink inside the folder is still followed.
+
 ## [0.2.0] - 2026-06-10
 
 ### Added
@@ -78,5 +84,6 @@ Initial release.
 - Example Pyramid application (`example/`) showing video-card partials reused across
   pages, plus a README walkthrough.
 
+[0.2.1]: https://pypi.org/project/chameleon-partials/0.2.1/
 [0.2.0]: https://pypi.org/project/chameleon-partials/0.2.0/
 [0.1.0]: https://pypi.org/project/chameleon-partials/0.1.0/
