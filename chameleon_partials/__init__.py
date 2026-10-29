@@ -142,7 +142,9 @@ def render_partial(template_file: str, **template_data: Any) -> HTML:
 
     Raises:
         PartialsException: If `register_extensions` has not been called yet.
-        ValueError: Propagated from Chameleon if `template_file` does not exist under the registered folder.
+        ValueError: Propagated from Chameleon if `template_file` does not exist under the registered folder, and
+            raised the same way (`Template not found: ...`) for a name that would load a file outside it: an absolute
+            path, a `..` out of the folder, or a `package:path` spec.
 
     Examples:
         ```python
@@ -160,9 +162,36 @@ def render_partial(template_file: str, **template_data: Any) -> HTML:
         template_data['render_partial'] = render_partial
 
     assert __templates is not None  # Guaranteed by the has_registered_extensions guard above.
+    assert template_path is not None
+    if not _in_folder(template_file, template_path):
+        # Chameleon's own error for a missing file, so code that catches it keeps working.
+        raise ValueError(f'Template not found: {template_file}.')
     page: PageTemplate = __templates[template_file]
     html_source = page.render(encoding='utf-8', **template_data)
     return HTML(html_source)
+
+
+def _in_folder(template_file: str, folder: str) -> bool:
+    """Whether `template_file` names a file inside `folder`.
+
+    Refuses an absolute path, a `..` that leaves the folder (one that stays inside is fine), a
+    `package:path` spec (which Chameleon's loader would read from that package), and a NUL. The
+    check is lexical, so a symlink inside the folder is still followed.
+    """
+    if not template_file or os.path.isabs(template_file) or ':' in template_file or '\0' in template_file:
+        return False
+    root = _path_key(folder)
+    try:
+        return os.path.commonpath([_path_key(os.path.join(folder, template_file)), root]) == root
+    except ValueError:
+        # Different drives (Windows).
+        return False
+
+
+def _path_key(path: str) -> str:
+    """A path as `_in_folder` compares it: absolute, normalized, and case-folded where the
+    platform folds (Windows)."""
+    return os.path.commonpath([os.path.normcase(os.path.abspath(path))])
 
 
 def extend_model(model: Optional[Dict[str, Any]]) -> Dict[str, Any]:

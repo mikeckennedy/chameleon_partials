@@ -60,6 +60,27 @@ def test_missing_template(registered_extension):
         chameleon_partials.render_partial('no-way.pt', message=7)
 
 
+@pytest.mark.parametrize(
+    'name',
+    [
+        '../test_rendering.py',
+        'render/../../test_rendering.py',
+        (Path(__file__).parent / 'test_templates' / 'render' / 'bare.pt').as_posix(),
+        'chameleon_partials:py.typed',
+    ],
+)
+def test_names_outside_the_folder_are_not_found(registered_extension, name):
+    # Each of these names a real file, outside the registered folder or through a path or package
+    # spec that could reach anywhere: refused as a missing template.
+    with pytest.raises(ValueError, match='Template not found'):
+        chameleon_partials.render_partial(name)
+
+
+def test_a_dot_dot_that_stays_inside_the_folder_is_fine(registered_extension):
+    html: chameleon_partials.HTML = chameleon_partials.render_partial('render/../render/bare.pt')
+    assert '<h1>This is bare HTML fragment</h1>' in html.html_text
+
+
 def test_not_registered():
     with pytest.raises(chameleon_partials.PartialsException):
         chameleon_partials.render_partial('doesnt-matter.pt', message=7)
