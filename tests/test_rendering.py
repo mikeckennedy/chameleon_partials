@@ -112,6 +112,7 @@ def test_every_spelling_of_a_partial_is_one_template(registered_extension):
         assert '<h1>This is bare HTML fragment</h1>' in html.html_text
 
     loader = chameleon_partials.__templates
+    assert loader is not None
     assert [name for name, *_ in loader.registry] == ['render/bare.pt']  # keyed by (name, template class)
 
 
@@ -130,6 +131,7 @@ def test_a_partial_that_includes_itself_raises_recursion_error(registered_extens
 def test_template_name_hook(registered_extension):
     # chameleon-rs resolves names for this package through _template_name; pin its contract.
     folder = chameleon_partials.template_path
+    assert folder is not None
     assert chameleon_partials._template_name(' ./render/../render//bare.pt ', folder) == 'render/bare.pt'
     for refused in ['../test_rendering.py', ' ../test_rendering.py', 'render', 'no-way.pt', '', '/etc/hosts']:
         assert chameleon_partials._template_name(refused, folder) is None

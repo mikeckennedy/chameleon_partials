@@ -28,7 +28,7 @@ uv run pytest                                                  # full test suite
 uv run pytest tests/test_rendering.py::test_render_with_data   # single test by node id
 uv run ruff check                                              # lint (--fix to auto-fix)
 uv run ruff format                                             # format (--check to verify only)
-uv run ty check chameleon_partials                             # type check (must pass clean)
+uv run ty check                                                # type check (must pass clean)
 uv run pyrefly check chameleon_partials/__init__.py            # second type checker (must pass clean)
 venv/bin/python scripts/build_docs.py                          # rebuild docs site into docs/
 venv/bin/python scripts/serve_docs.py                          # preview at 127.0.0.1:8099/docs/chameleon-partials/
@@ -37,9 +37,9 @@ venv/bin/python scripts/serve_docs.py                          # preview at 127.
 - Run pytest from the repo root: `[tool.pytest.ini_options] testpaths = ["tests"]`
   deliberately excludes `example/`, whose tests need Pyramid/WebTest (not installed in the
   root venv).
-- A repo-wide `ty check` (no path argument) fails on `example/`: unresolved-import errors
-  for Pyramid/pydantic/WebTest (not installed in the root venv) — scope it to the package
-  as shown above.
+- `example/` is excluded from ty via `[tool.ty.src] exclude` in `pyproject.toml`, because
+  Pyramid/pydantic/WebTest are not installed in the root venv. A repo-wide `ty check` (no
+  path argument) therefore passes and also covers `tests/` and `scripts/`.
 - `uv run <tool>` syncs the project environment first, and a sync installs only the
   runtime dependencies: it has rebuilt `venv/` on a different interpreter and dropped
   pytest, ruff, ty, pyrefly, and great-docs. Restore with

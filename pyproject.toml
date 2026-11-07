@@ -79,3 +79,8 @@ dev = { file = ["requirements-dev.txt"] }
 # repo root must not try to import them.
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.ty.src]
+# The example Pyramid app has its own env (Pyramid, pydantic, WebTest are not in venv/),
+# so a repo-wide `ty check` would report unresolved imports there; exclude it.
+exclude = ["example/"]
