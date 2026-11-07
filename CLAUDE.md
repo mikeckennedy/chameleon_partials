@@ -38,14 +38,20 @@ venv/bin/python scripts/serve_docs.py                          # preview at 127.
   deliberately excludes `example/`, whose tests need Pyramid/WebTest (not installed in the
   root venv).
 - A repo-wide `ty check` (no path argument) fails on `example/`: unresolved-import errors
-  for Pyramid/pydantic/WebTest (not installed in the root venv), plus one for the
-  known-stale `my_view` import in `example/tests/test_views.py` — scope it to the package
+  for Pyramid/pydantic/WebTest (not installed in the root venv) — scope it to the package
   as shown above.
+- `uv run <tool>` syncs the project environment first, and a sync installs only the
+  runtime dependencies: it has rebuilt `venv/` on a different interpreter and dropped
+  pytest, ruff, ty, pyrefly, and great-docs. Restore with
+  `uv venv venv --python 3.14 --clear && uv pip install --python venv/bin/python -e '.[dev]'`,
+  and prefer `venv/bin/<tool>` for day-to-day runs.
 - ruff is not declared in requirements-dev.txt; it is present only as a transitive
   dependency of great-docs (Python >= 3.11). Config is in `ruff.toml`: 120-char lines,
-  single quotes, E/F/I rules, and `target-version = "py39"` — pinned to match
-  `requires-python >= 3.9` so Ruff never rewrites `Optional[Dict]`-style typing into
-  3.10+-only syntax. Do not bump it.
+  single quotes, E/F/I rules, and `target-version = "py39"`. The package floor is now
+  `requires-python >= 3.10` (3.9 dropped in 0.2.2); the py39 target is stricter than
+  needed and harmless, so leave it. Note that ruff 0.17 also formats fenced Python in
+  Markdown, so `ruff format --check` with no path argument reports README/WARP/skill
+  files; scope it to `chameleon_partials tests scripts example` for the Python check.
 - There is no CI (`.github/` holds only FUNDING.yml); tests, lint, and type checks run
   locally only.
 
@@ -113,7 +119,24 @@ IS committed (git-push static hosting, served by nginx at a subpath).
   it does not exercise the production subpath) and "Preview Docs (subpath)"
   (`serve_docs.py`) — use the subpath one to validate links and assets.
 - great-docs requires Python >= 3.11 (environment marker in requirements-dev.txt) even
-  though the library itself supports 3.9+.
+  though the library itself supports 3.10+. The committed site was last built with
+  great-docs 0.17.0.
+- The user guide lives in `user_guide/*.qmd` at the repo root (auto-discovered;
+  `index.qmd` first, then numeric prefixes, which are stripped from the published URL:
+  `01-getting-started.qmd` -> `user-guide/getting-started.html`). Its text is included in
+  `docs/llms-full.txt`. Keep every page linked from `user_guide/index.qmd` and the README.
+- The agent skill is hand-written at `skills/chameleon-partials/SKILL.md` and wired via
+  `skill.file` in `great-docs.yml`; great-docs copies it verbatim to `docs/skill.md` and
+  both `.well-known` locations (the directory name comes from the frontmatter `name`).
+  Use absolute URLs in it, since it is served from several paths. Lint it with
+  `rumdl check --disable MD013 skills/chameleon-partials/SKILL.md`.
+- `build_docs.py` exits non-zero when `llms.txt`, `llms-full.txt`, `skill.md`, or a
+  `.well-known` skill file is missing from the output. great-docs writes `llms-full.txt`
+  only if it can import the package, and reports success either way, so this check is
+  the only signal.
+- Known great-docs limitation: `package-info` reports 0 runtime dependencies because the
+  dependencies are dynamic (read from requirements.txt); it does not read installed
+  metadata. Not worth making the dependencies static over.
 - The site ships agent-facing artifacts (`docs/llms.txt`, `docs/llms-full.txt`,
   `docs/skill.md`, and `.well-known/` skill files) — all generated; the same no-hand-edit
   rule applies.
@@ -127,6 +150,6 @@ separately (e.g. `pip install -e ..` from `example/`). Run it with
 `env/bin/pserve development.ini` (http://localhost:6543).
 
 It is the reference for real-world usage: the BeforeRender middleware, nested partials
-inside `tal:repeat` loops, and METAL layout inheritance. Known-stale bit: its
-`tests/test_views.py` imports a `my_view` that no longer exists (cookiecutter leftover),
-so the example's own test suite does not pass as-is.
+inside `tal:repeat` loops, and METAL layout inheritance. Its own suite (5 tests) passes
+when run from `example/` in an env with `.[testing]` plus this package installed; the
+functional tests assert on the rendered partial markup.

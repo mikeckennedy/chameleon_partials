@@ -81,7 +81,7 @@ import chameleon_partials
 from pathlib import Path
 
 # One-time registration (typically in app startup)
-folder = (Path(__file__).parent / "templates").as_posix()
+folder = (Path(__file__).parent / 'templates').as_posix()
 chameleon_partials.register_extensions(folder, auto_reload=True, cache_init=True)
 
 # In templates, use render_partial function
@@ -93,6 +93,7 @@ chameleon_partials.register_extensions(folder, auto_reload=True, cache_init=True
 # views/partials_middleware.py
 from pyramid.events import subscriber, BeforeRender
 import chameleon_partials
+
 
 @subscriber(BeforeRender)
 def add_global(event):

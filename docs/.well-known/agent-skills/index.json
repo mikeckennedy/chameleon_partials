@@ -2,7 +2,7 @@
   "skills": [
     {
       "name": "chameleon-partials",
-      "description": "Simple reuse of partial HTML page templates in the Chameleon template language for Python web frameworks. Use when writing Python code that uses the chameleon_partials package.",
+      "description": "Renders reusable HTML fragments (partials) inside Chameleon templates for any Python web framework that renders Chameleon, such as Pyramid or FastAPI. Use when adding chameleon_partials to an app, calling render_partial from a .pt template or from Python, wiring render_partial into Pyramid (BeforeRender) or another framework (extend_model), testing partials with pytest, or fixing PartialsException, ValueError \"Template not found\", NameError: render_partial, escaped markup, or template edits that do not show up.",
       "files": [
         "SKILL.md"
       ]

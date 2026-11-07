@@ -11,10 +11,15 @@ That's what this library is all about.
 
 ## Documentation
 
-Full documentation lives at
-[mkennedy.codes/docs/chameleon-partials](https://mkennedy.codes/docs/chameleon-partials/),
-including the complete [API reference](https://mkennedy.codes/docs/chameleon-partials/reference/)
-generated from the library's docstrings.
+Full documentation lives at [mkennedy.codes/docs/chameleon-partials](https://mkennedy.codes/docs/chameleon-partials/). The user guide expands each section of this README:
+
+- [Getting started](https://mkennedy.codes/docs/chameleon-partials/user-guide/getting-started.html): install, register the template folder, wire `render_partial` into your framework, render a first fragment.
+- [Writing partials](https://mkennedy.codes/docs/chameleon-partials/user-guide/writing-partials.html): how paths resolve, the model, nesting, loops, METAL layouts, rendering from Python, and choosing partials safely.
+- [Testing](https://mkennedy.codes/docs/chameleon-partials/user-guide/testing.html): a pytest fixture for the one-time registration and what the error types promise.
+- [Troubleshooting](https://mkennedy.codes/docs/chameleon-partials/user-guide/troubleshooting.html): every error you can hit in normal use, its cause, and the fix.
+- [API reference](https://mkennedy.codes/docs/chameleon-partials/reference/), generated from the library's docstrings.
+
+Coding agents can read the same material from [llms-full.txt](https://mkennedy.codes/docs/chameleon-partials/llms-full.txt) or install the [agent skill](https://mkennedy.codes/docs/chameleon-partials/skills.html).
 
 ## Example
 
@@ -29,7 +34,7 @@ to see it in action.
 
 ## Installation
 
-It's just `pip install chameleon-partials` and you're all set with this pure Python package.
+It's just `pip install chameleon-partials` (or `uv add chameleon-partials`) and you're all set with this pure Python package. It needs Python 3.10 or newer and depends only on Chameleon.
 
 ## Usage
 
@@ -43,20 +48,22 @@ from pyramid.config import Configurator
 
 import chameleon_partials
 
+
 def main(_, **settings):
-    """ This function returns a Pyramid WSGI application.
-    """
+    """This function returns a Pyramid WSGI application."""
     with Configurator(settings=settings) as config:
         config.include('pyramid_chameleon')
         config.include('.routes')
         config.scan()
-        
+
         # Register the extension for working with Chameleon.
-        folder = (Path(__file__).parent / "templates").as_posix()
+        folder = (Path(__file__).parent / 'templates').as_posix()
         chameleon_partials.register_extensions(folder, auto_reload=True, cache_init=True)
 
     return config.make_wsgi_app()
 ```
+
+Set `auto_reload=True` while developing so template edits show up without a restart, and leave it at the default `False` in production. Calling `register_extensions` again after it has succeeded does nothing, so repeated startup calls are safe (see [Testing](https://mkennedy.codes/docs/chameleon-partials/user-guide/testing.html) for pointing tests at their own folder).
 
 Next, you define your main HTML (Chameleon) templates as usual. Then 
 define your partial templates. I recommend locating and naming them accordingly:
@@ -104,7 +111,10 @@ linking out to YouTube:
 ```
 
 Now you see the `render_partial()` method. It takes the subpath into the templates folder and
-any model data passed in as keyword arguments.
+any model data passed in as keyword arguments. The path is always relative to the registered
+folder, even when the call is inside another partial. It returns an `HTML` object that Chameleon
+inserts unescaped; read its `html_text` attribute when you need the string, for example in a
+test or an HTMX response.
 
 We can finally generate the list of video blocks as follows:
 
@@ -169,3 +179,29 @@ def listing(_):
 
 Again: If you are using Pyramid, use the middleware. Otherwise, use the `extend_model()` method or something 
 similar to the middleware in your framework.
+
+## Testing
+
+Partials are plain functions over plain files, so tests need no web framework. Register the test
+template folder in a fixture and reset the registration flag afterwards, because a second
+`register_extensions()` call is a no-op by default:
+
+```python
+@pytest.fixture
+def registered_extension():
+    folder = (Path(__file__).parent / 'test_templates').as_posix()
+    chameleon_partials.register_extensions(folder, auto_reload=True)
+    yield
+    chameleon_partials.has_registered_extensions = False
+
+
+def test_render_with_data(registered_extension):
+    html = chameleon_partials.render_partial('render/with_data.pt', name='Sarah', age=32)
+    assert '<span>Your name is Sarah and age is 32</span>' in html.html_text
+```
+
+The [Testing](https://mkennedy.codes/docs/chameleon-partials/user-guide/testing.html) page covers the error contract: `PartialsException` is raised for misuse only, and Chameleon's own errors (such as the `ValueError` for a missing template) pass through unchanged.
+
+## Troubleshooting
+
+Every error you can hit in normal use, with its cause and fix, is on the [Troubleshooting](https://mkennedy.codes/docs/chameleon-partials/user-guide/troubleshooting.html) page: rendering before registration, `Template not found`, `NameError: render_partial`, markup that shows up escaped, and template edits that do not appear.

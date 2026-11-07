@@ -5,7 +5,9 @@ Great Docs renders the site to ``great-docs/_site/``, an ephemeral, git-ignored 
 directory that is regenerated on every build. For git-push static hosting we keep a
 committed copy of the site at the repo root in ``docs/`` (which nginx serves at the
 subpath). This script runs the build, mirrors ``_site/`` into ``docs/`` (full replace),
-then applies two small post-processing fixes (see ``_postprocess`` below).
+applies two small post-processing fixes (see ``_postprocess`` below), and then fails if any
+agent-facing file is missing from the output (see ``_check_required``): great-docs reports a
+successful build even when it could not import the package to write ``llms-full.txt``.
 
 Run it with the project's virtualenv interpreter, e.g.::
 
@@ -41,7 +43,9 @@ def _postprocess(dest: Path) -> None:
     """Work around two great-docs 0.13.0 bugs in the mirrored site.
 
     Both fix generated files, so they must run on every build (a hand-edit to docs/ would be
-    overwritten). Each step is guarded and idempotent.
+    overwritten). Each step is guarded and idempotent. great-docs 0.17.0 no longer trips either
+    bug (no dead search entries, canonical links emitted), so both steps are quiet no-ops on a
+    current build and stay here as guards.
 
     1. Prune dead entries from search.json. great-docs indexes a "skill" page as
        ``skill.html`` but only emits ``skill.md`` / ``skills.html``, so those search results
@@ -92,6 +96,36 @@ def _postprocess(dest: Path) -> None:
             print(f'  canonical: injected <link rel=canonical> into {injected} page(s)')
 
 
+# Files that must exist in every build. great-docs only writes llms-full.txt (and the
+# one-line summaries in llms.txt) when it can import the package; if the import fails it
+# prints "Could not import ..." and still reports success, so check the output directly.
+REQUIRED = (
+    'llms.txt',
+    'llms-full.txt',
+    'skill.md',
+    '.well-known/skills/default/SKILL.md',
+    '.well-known/agent-skills/index.json',
+)
+
+
+def _check_required(dest: Path) -> bool:
+    """Return False (after printing what is missing) when an agent-facing file was not built."""
+    missing = [rel for rel in REQUIRED if not (dest / rel).is_file()]
+    index = dest / '.well-known/agent-skills/index.json'
+    if index.is_file():
+        try:
+            for skill in json.loads(index.read_text(encoding='utf-8')).get('skills', []):
+                for rel in skill.get('files', []):
+                    path = f'.well-known/agent-skills/{skill.get("name", "")}/{rel}'
+                    if not (dest / path).is_file():
+                        missing.append(path)
+        except ValueError as exc:
+            missing.append(f'.well-known/agent-skills/index.json (unreadable: {exc})')
+    for rel in missing:
+        print(f'missing from the built site: {rel}', file=sys.stderr)
+    return not missing
+
+
 def main() -> int:
     # Prefer the great-docs installed alongside the running interpreter (the project venv),
     # falling back to whatever is on PATH.
@@ -108,6 +142,8 @@ def main() -> int:
         shutil.rmtree(DEST)
     shutil.copytree(SITE, DEST)
     _postprocess(DEST)
+    if not _check_required(DEST):
+        return 1
     print(f'Mirrored -> {DEST} ({sum(1 for p in DEST.rglob("*") if p.is_file())} files)')
     return 0
 

@@ -1,0 +1,123 @@
+# Writing partials
+
+A partial is a Chameleon template rendered by [render_partial](../reference/render_partial.md#chameleon_partials.render_partial). This page covers the rules that are not obvious from the call itself: how the name resolves, how the model gets in, how partials nest, and how they fit with METAL layouts.
+
+
+# Paths are relative to the registered folder
+
+The first argument to [render_partial](../reference/render_partial.md#chameleon_partials.render_partial) is a path relative to the folder you passed to [register_extensions](../reference/register_extensions.md#chameleon_partials.register_extensions). It is never relative to the template making the call, even when that template is itself a partial in a subfolder. A partial in `shared/partials/` that wants a sibling still writes the full path:
+
+``` html
+<!-- templates/shared/partials/video_square.pt -->
+
+    [${ render_partial('shared/partials/video_image.pt', video=video, classes=[]) }](https://www.youtube.com/watch?v=${ video.id })
+    [${ video.author }](https://www.youtube.com/watch?v=${ video.id })
+    <div class="views">${ "{:,}".format(video.views) } views</div>
+
+```
+
+This differs from Chameleon's own `metal:use-macro="load: ../shared/_layout.pt"`, where the path is relative to the current template file. Keep the two rules apart: `load:` is relative to the file, [render_partial](../reference/render_partial.md#chameleon_partials.render_partial) is relative to the folder.
+
+The name must point at a regular file inside the registered folder. An absolute path, a `..` that leaves the folder, a `package:path` spec, or a folder name is reported as a missing template, with Chameleon's own `ValueError` (`Template not found: ...`). A `..` that stays inside the folder is fine. Surrounding whitespace and redundant `./` or `//` segments are normalized away, so every spelling of a file compiles and caches one template. On macOS and Windows, a differently cased spelling still loads but caches separately, so pick one spelling.
+
+
+# The model is the keyword arguments
+
+Everything after the path is passed to the fragment as its model. Any Python object works, and the template uses it through ordinary Chameleon expressions:
+
+``` html
+${ render_partial('shared/partials/user_card.pt', user=user, show_email=False) }
+```
+
+A name the template references but the call does not pass raises Chameleon's `NameError` at render time. There are no defaults, so pass every name the partial uses, or give the partial a `tal:define` with a fallback.
+
+Three names are not yours to use. `encoding` is reserved because [render_partial](../reference/render_partial.md#chameleon_partials.render_partial) passes `encoding='utf-8'` to Chameleon itself, and supplying it raises `TypeError`. `translate` and `target_language` have special meaning to Chameleon's i18n support, and `repeat` is the name of Chameleon's loop-state object, so a value under any of those names will not reach your template the way you expect.
+
+
+# Nesting
+
+Every partial automatically receives [render_partial](../reference/render_partial.md#chameleon_partials.render_partial) in its model, so a partial can render other partials with no extra wiring. The `video_square.pt` fragment above does this with `video_image.pt`. Nesting depth is not limited by the package. A partial that includes itself without a stopping condition raises Python's `RecursionError`.
+
+
+# Loops
+
+Call [render_partial](../reference/render_partial.md#chameleon_partials.render_partial) inside a `tal:repeat` to render a fragment per item. The loop variable in the outer template can be renamed to whatever the partial expects:
+
+``` html
+<span class="video" tal:repeat="v videos">
+    ${ render_partial('shared/partials/video_square.pt', video=v) }
+</span>
+```
+
+
+# Layouts
+
+Partials compose with METAL layout inheritance. A page fills a layout's slot and renders partials inside the slot. The layout itself is an ordinary Chameleon template; by convention it starts with an underscore so it is easy to tell apart from pages and partials:
+
+``` html
+<!-- templates/shared/_layout.pt -->
+<!DOCTYPE html metal:define-macro="layout">
+<html lang="en">
+<body>
+    <div metal:define-slot="content">No content</div>
+</body>
+</html>
+```
+
+``` html
+<!-- templates/home/index.pt -->
+
+    <div metal:fill-slot="content">
+        <div tal:repeat="v videos">
+            ${ render_partial('shared/partials/video_square.pt', video=v) }
+        </div>
+    </div>
+
+```
+
+A partial can use a layout too, since it is just a template, but a fragment meant to be inserted into a page normally should not.
+
+
+# Rendering a fragment from Python
+
+[render_partial](../reference/render_partial.md#chameleon_partials.render_partial) is a normal Python function, so a view can call it directly. This is how to return just a fragment for an HTMX request, build the body of an email, or assert on markup in a test. The return value is an `HTML` object; read its `html_text` attribute for the string:
+
+``` python
+import chameleon_partials
+
+fragment = chameleon_partials.render_partial('shared/partials/video_square.pt', video=video)
+return Response(fragment.html_text)
+```
+
+Pass the `HTML` object itself, not `html_text`, when the value goes back into another template. Chameleon escapes a plain string and inserts an `HTML` object as is.
+
+
+# Choosing partials safely
+
+Choose the partial in your code, never from request data. The containment check above stops a name from reaching outside the template folder, but a request that picks the fragment should still be mapped to a name you wrote rather than used to build the path:
+
+``` python
+PARTIALS = {'card': 'shared/partials/video_square.pt', 'row': 'shared/partials/video_row.pt'}
+html = render_partial(PARTIALS[request.params['style']], video=video)
+```
+
+Pass the model as named keyword arguments too. Spreading a request's parameters into the call (`render_partial(name, **request.params)`) lets a parameter replace a name the template relies on. [render_partial](../reference/render_partial.md#chameleon_partials.render_partial) is only injected into the model when the key is absent, so a request parameter named [render_partial](../reference/render_partial.md#chameleon_partials.render_partial) would take its place.
+
+
+# A layout for the templates folder
+
+The package does not require any particular layout, but this one keeps pages, layouts, and partials apart and matches the example app:
+
+``` text
+templates/
+├── errors/
+│   └── 404.pt
+├── home/
+│   ├── index.pt
+│   └── listing.pt
+└── shared/
+    ├── _layout.pt
+    └── partials/
+        ├── video_image.pt
+        └── video_square.pt
+```

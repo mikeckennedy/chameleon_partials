@@ -16,6 +16,15 @@ import chameleon_partials
 chameleon_partials.register_extensions('path/to/templates')
 html = chameleon_partials.render_partial('shared/partials/video_image.pt', video=video)
 ```
+
+The public API is four names: `register_extensions` (once, at startup), `render_partial`
+(from templates or Python), `extend_model` (adds `render_partial` to a view model for
+frameworks without a render hook; Pyramid apps use a `BeforeRender` subscriber instead),
+and `PartialsException` (misuse only; Chameleon's own errors, such as the `ValueError` for
+a missing template, propagate unchanged). `render_partial` returns an `HTML` wrapper that
+template engines insert unescaped; read its `html_text` for the string.
+
+Documentation: https://mkennedy.codes/docs/chameleon-partials/
 """
 
 __version__ = '0.2.2'
@@ -45,6 +54,20 @@ class PartialsException(Exception):
     before calling `register_extensions`, or passing a non-dictionary model to
     `extend_model`. Errors raised by Chameleon itself, such as the `ValueError` for a
     missing template file, are propagated unchanged rather than wrapped in this type.
+
+    Examples:
+        ```python
+        import chameleon_partials
+
+        try:
+            chameleon_partials.render_partial('shared/partials/user_card.pt', name='Sarah')
+        except chameleon_partials.PartialsException:
+            # register_extensions() has not been called yet; do that at startup.
+            raise
+        except ValueError:
+            # Chameleon's own error: the template file is missing or outside the folder.
+            raise
+        ```
     """
 
 

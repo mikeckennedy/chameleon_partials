@@ -1,11 +1,11 @@
-from demo_chameleon_partials.views.home import my_view
+from demo_chameleon_partials.views.home import index
 from demo_chameleon_partials.views.notfound import notfound_view
 
 
-def test_my_view(app_request):
-    info = my_view(app_request)
+def test_index_view(app_request):
+    info = index(app_request)
     assert app_request.response.status_int == 200
-    assert info['project'] == 'demo_chameleon_partials'
+    assert len(info['rows']) == 1
 
 
 def test_notfound_view(app_request):

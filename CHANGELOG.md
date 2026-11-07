@@ -21,6 +21,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `_template_name(template_file, folder)`, the single function `render_partial` now resolves names through. It returns the normalized name to load or `None` for a refused or missing one. chameleon-rs calls it when it renders a partial on behalf of this package, so both engines share one check.
 - Guidance in the `render_partial` docs and README: choose the partial in code and map any request value to a name you wrote, and pass the model as named keyword arguments rather than spreading request parameters into it.
 
+### Changed
+
+- The minimum supported Python is now 3.10 (`requires-python >= 3.10`), and the 3.9 trove classifier is gone. Chameleon itself still supports 3.9; stay on 0.2.1 if you need it.
+
+### Documentation
+
+- A user guide on the docs site, also included in `llms-full.txt`: getting started, writing partials (path resolution, the model, nesting, loops, METAL layouts, rendering from Python, choosing partials safely), testing, and a troubleshooting page that lists every error the package or Chameleon raises in normal use with its cause and fix. The README links each page and gained Testing and Troubleshooting sections.
+- The agent skill (`skill.md` and the `.well-known` copies) is now hand-written in `skills/chameleon-partials/SKILL.md` and copied verbatim by Great Docs, replacing the generated one. It states the rules an agent would otherwise get wrong (path resolution, the one-shot registration, the error contract, reserved model names, the `HTML` wrapper), a decision table, the API with what each name raises, and real output.
+- The module docstring names the four public entry points, the `HTML` wrapper, and the error contract, since it is the first thing an agent sees on import.
+- `scripts/build_docs.py` now fails when `llms.txt`, `llms-full.txt`, `skill.md`, or a `.well-known` skill file is missing from the built site. Great Docs reports success even when it could not import the package to write `llms-full.txt`.
+- The example app's own test suite passes again: `tests/test_views.py` imported a `my_view` that no longer existed and now tests the `index` view, `test_functional.py` asserts on the rendered partials rather than on text the home page never had, and the `Video` model's optional `category` field has a default so the app loads under pydantic 2.
+
 ## [0.2.1] - 2026-10-28
 
 ### Security

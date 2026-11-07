@@ -1,0 +1,22 @@
+# User Guide
+
+Chameleon templates have no built-in way to reuse a small fragment of HTML across pages. chameleon_partials adds one function, [render_partial](../reference/render_partial.md#chameleon_partials.render_partial), that a template calls to insert a fragment and pass it a model:
+
+``` html
+<span class="video" tal:repeat="v videos">
+    ${ render_partial('shared/partials/video_square.pt', video=v) }
+</span>
+```
+
+The fragment is an ordinary Chameleon template that lives under the folder you register once at startup. It receives the keyword arguments as its model, it can call [render_partial](../reference/render_partial.md#chameleon_partials.render_partial) itself to nest further fragments, and the markup it produces is inserted unescaped.
+
+
+# Where to go next
+
+- [Getting started](getting-started.md): install the package, register the template folder, make [render_partial](../reference/render_partial.md#chameleon_partials.render_partial) available to your templates, and render a first fragment.
+- [Writing partials](writing-partials.md): how paths resolve, passing a model, nesting, loops, METAL layouts, rendering a fragment from Python, and choosing partials safely.
+- [Testing](testing.md): a pytest fixture for the one-time registration, asserting on rendered markup, and what the error types promise.
+- [Troubleshooting](troubleshooting.md): every error the package or Chameleon raises in normal use, what causes it, and how to fix it.
+- [API reference](../reference/index.md): the four public names with their full docstrings.
+
+The [example Pyramid app](https://github.com/mikeckennedy/chameleon_partials/tree/main/example) in the repository shows all of this working together: the `BeforeRender` subscriber, nested partials inside `tal:repeat` loops, and METAL layout inheritance.
