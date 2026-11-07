@@ -3,6 +3,6 @@
 
 # Summary
 
-- **Requires:** Python `>=3.9`
+- **Requires:** Python `>=3.10`
 - **Runtime Dependencies:** 0
 - **Total unique dependencies:** 0

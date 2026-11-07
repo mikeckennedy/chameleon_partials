@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.2] - 2026-11-06
+
+### Security
+
+- `render_partial` strips surrounding whitespace from a name before checking it, as Chameleon's loader does before loading it. The 0.2.1 check saw the unstripped name, so a leading space, tab, or newline (`' ../secret.pt'`) passed the check as the folder `' ..'` and then loaded the file outside the template folder. Stripping first makes the check and the loader see one string; a harmless name with surrounding whitespace still renders, as before.
+
+### Fixed
+
+- Every spelling of a partial now compiles and caches one template. Chameleon's loader caches by the exact name it is given, so `./shared/card.pt`, `shared//card.pt`, `shared/../shared/card.pt`, and whitespace variants each kept their own compiled copy for the life of the process, which a request-chosen name could grow without bound. Names are normalized first; distinct case spellings on a case-insensitive filesystem still cache separately.
+- A name that is a folder (`partials`, `partials/`, `.`) raises `ValueError` (`Template not found: ...`) instead of leaking an `IsADirectoryError` from inside Chameleon.
+
+### Added
+
+- `_template_name(template_file, folder)`, the single function `render_partial` now resolves names through. It returns the normalized name to load or `None` for a refused or missing one. chameleon-rs calls it when it renders a partial on behalf of this package, so both engines share one check.
+- Guidance in the `render_partial` docs and README: choose the partial in code and map any request value to a name you wrote, and pass the model as named keyword arguments rather than spreading request parameters into it.
+
 ## [0.2.1] - 2026-10-28
 
 ### Security
@@ -84,6 +100,7 @@ Initial release.
 - Example Pyramid application (`example/`) showing video-card partials reused across
   pages, plus a README walkthrough.
 
+[0.2.2]: https://pypi.org/project/chameleon-partials/0.2.2/
 [0.2.1]: https://pypi.org/project/chameleon-partials/0.2.1/
 [0.2.0]: https://pypi.org/project/chameleon-partials/0.2.0/
 [0.1.0]: https://pypi.org/project/chameleon-partials/0.1.0/

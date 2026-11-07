@@ -1,0 +1,4 @@
+<div>
+    <span>depth ${n}</span>
+    ${ render_partial('render/self_including.pt', n=n + 1)}
+</div>

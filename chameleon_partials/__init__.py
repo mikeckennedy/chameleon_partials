@@ -18,7 +18,7 @@ html = chameleon_partials.render_partial('shared/partials/video_image.pt', video
 ```
 """
 
-__version__ = '0.2.1'
+__version__ = '0.2.2'
 __author__ = 'Michael Kennedy <michael@talkpython.fm>'
 __all__ = [
     'register_extensions',
@@ -142,9 +142,22 @@ def render_partial(template_file: str, **template_data: Any) -> HTML:
 
     Raises:
         PartialsException: If `register_extensions` has not been called yet.
-        ValueError: Propagated from Chameleon if `template_file` does not exist under the registered folder, and
-            raised the same way (`Template not found: ...`) for a name that would load a file outside it: an absolute
-            path, a `..` out of the folder, or a `package:path` spec.
+        ValueError: Raised as Chameleon raises it for a missing file (`Template not found: ...`) when
+            `template_file` does not name a regular file under the registered folder: a missing file, a folder,
+            or a name that would reach outside the folder (an absolute path, a `..` out of the folder, or a
+            `package:path` spec).
+
+    Note:
+        Surrounding whitespace is stripped and `./`, `//`, and a `..` that stays inside the folder are
+        normalized away, so every spelling of a file compiles and caches one template. Distinct case spellings
+        on a case-insensitive filesystem (macOS, Windows) still cache separately. The check that keeps a name
+        inside the folder is lexical, so a symlink inside the folder is still followed.
+
+        Choose the partial in your code, never from request data. If a request picks the fragment, map the
+        request value to a name you wrote (`PARTIALS = {'card': 'partials/card.pt'}`) instead of building the
+        path from it, and pass the model as named keyword arguments rather than spreading a request's
+        parameters into it (`render_partial(name, **request.params)` lets a parameter replace a name the
+        template relies on, such as `render_partial` itself).
 
     Examples:
         ```python
@@ -163,12 +176,32 @@ def render_partial(template_file: str, **template_data: Any) -> HTML:
 
     assert __templates is not None  # Guaranteed by the has_registered_extensions guard above.
     assert template_path is not None
-    if not _in_folder(template_file, template_path):
+    name = _template_name(template_file, template_path)
+    if name is None:
         # Chameleon's own error for a missing file, so code that catches it keeps working.
         raise ValueError(f'Template not found: {template_file}.')
-    page: PageTemplate = __templates[template_file]
+    page: PageTemplate = __templates[name]
     html_source = page.render(encoding='utf-8', **template_data)
     return HTML(html_source)
+
+
+def _template_name(template_file: str, folder: str) -> Optional[str]:
+    """The name to load `template_file` by from `folder`, or `None` when it is not a template there.
+
+    The name is stripped of surrounding whitespace first, because Chameleon's loader strips it too: checking
+    one string and loading another let `' ../secret.pt'` pass the containment check as the folder `' ..'` and
+    then load `../secret.pt`. It is then normalized (`./`, `//`, and an inside `..` fold away) so that every
+    spelling of a file shares one entry in Chameleon's template cache, which otherwise grows by one compiled
+    template per spelling. Finally it must stay inside the folder (see `_in_folder`) and name a regular file,
+    so a folder is "not found" rather than an `IsADirectoryError` from inside Chameleon.
+
+    chameleon-rs calls this function when it renders a partial on behalf of this package, so that both engines
+    resolve names through one check. Keep the signature and the `None`-for-refused contract.
+    """
+    spec = os.path.normpath(template_file.strip())
+    if not _in_folder(spec, folder) or not os.path.isfile(os.path.join(folder, spec)):
+        return None
+    return spec
 
 
 def _in_folder(template_file: str, folder: str) -> bool:

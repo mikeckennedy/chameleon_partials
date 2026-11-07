@@ -65,6 +65,13 @@ def test_missing_template(registered_extension):
     [
         '../test_rendering.py',
         'render/../../test_rendering.py',
+        # Chameleon's loader strips the name before joining it, so leading whitespace used to pass the lexical
+        # check (as the folder ' ..') and then load ../test_rendering.py. Whitespace inside a segment is not
+        # stripped and was always refused; it is pinned here with the others.
+        ' ../test_rendering.py',
+        '\t../test_rendering.py',
+        '\n../test_rendering.py',
+        'render/ ../../test_rendering.py',
         (Path(__file__).parent / 'test_templates' / 'render' / 'bare.pt').as_posix(),
         'chameleon_partials:py.typed',
     ],
@@ -79,6 +86,53 @@ def test_names_outside_the_folder_are_not_found(registered_extension, name):
 def test_a_dot_dot_that_stays_inside_the_folder_is_fine(registered_extension):
     html: chameleon_partials.HTML = chameleon_partials.render_partial('render/../render/bare.pt')
     assert '<h1>This is bare HTML fragment</h1>' in html.html_text
+
+
+@pytest.mark.parametrize('name', [' render/bare.pt', 'render/bare.pt ', '\trender/bare.pt\n'])
+def test_surrounding_whitespace_still_renders(registered_extension, name):
+    # Chameleon strips it, so stripping it first changes nothing for a harmless name.
+    html: chameleon_partials.HTML = chameleon_partials.render_partial(name)
+    assert '<h1>This is bare HTML fragment</h1>' in html.html_text
+
+
+def test_every_spelling_of_a_partial_is_one_template(registered_extension):
+    # Chameleon caches a compiled template per name it is given; without normalizing the name, a request-chosen
+    # spelling could add a compiled template per request for the life of the process.
+    spellings = [
+        'render/bare.pt',
+        './render/bare.pt',
+        'render//bare.pt',
+        'render/./bare.pt',
+        'render/../render/bare.pt',
+        ' render/bare.pt',
+        'render/bare.pt ',
+    ]
+    for name in spellings:
+        html: chameleon_partials.HTML = chameleon_partials.render_partial(name)
+        assert '<h1>This is bare HTML fragment</h1>' in html.html_text
+
+    loader = chameleon_partials.__templates
+    assert [name for name, *_ in loader.registry] == ['render/bare.pt']  # keyed by (name, template class)
+
+
+@pytest.mark.parametrize('name', ['render', 'render/', '.', './', ''])
+def test_a_folder_name_is_not_a_template(registered_extension, name):
+    # Used to surface as an IsADirectoryError from inside Chameleon, which "not found" handlers miss.
+    with pytest.raises(ValueError, match='Template not found'):
+        chameleon_partials.render_partial(name)
+
+
+def test_a_partial_that_includes_itself_raises_recursion_error(registered_extension):
+    with pytest.raises(RecursionError):
+        chameleon_partials.render_partial('render/self_including.pt', n=0)
+
+
+def test_template_name_hook(registered_extension):
+    # chameleon-rs resolves names for this package through _template_name; pin its contract.
+    folder = chameleon_partials.template_path
+    assert chameleon_partials._template_name(' ./render/../render//bare.pt ', folder) == 'render/bare.pt'
+    for refused in ['../test_rendering.py', ' ../test_rendering.py', 'render', 'no-way.pt', '', '/etc/hosts']:
+        assert chameleon_partials._template_name(refused, folder) is None
 
 
 def test_not_registered():

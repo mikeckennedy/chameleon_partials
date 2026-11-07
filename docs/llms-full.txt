@@ -68,9 +68,22 @@ Returns:
 
 Raises:
     PartialsException: If `register_extensions` has not been called yet.
-    ValueError: Propagated from Chameleon if `template_file` does not exist under the registered folder, and
-        raised the same way (`Template not found: ...`) for a name that would load a file outside it: an absolute
-        path, a `..` out of the folder, or a `package:path` spec.
+    ValueError: Raised as Chameleon raises it for a missing file (`Template not found: ...`) when
+        `template_file` does not name a regular file under the registered folder: a missing file, a folder,
+        or a name that would reach outside the folder (an absolute path, a `..` out of the folder, or a
+        `package:path` spec).
+
+Note:
+    Surrounding whitespace is stripped and `./`, `//`, and a `..` that stays inside the folder are
+    normalized away, so every spelling of a file compiles and caches one template. Distinct case spellings
+    on a case-insensitive filesystem (macOS, Windows) still cache separately. The check that keeps a name
+    inside the folder is lexical, so a symlink inside the folder is still followed.
+
+    Choose the partial in your code, never from request data. If a request picks the fragment, map the
+    request value to a name you wrote (`PARTIALS = {'card': 'partials/card.pt'}`) instead of building the
+    path from it, and pass the model as named keyword arguments rather than spreading a request's
+    parameters into it (`render_partial(name, **request.params)` lets a parameter replace a name the
+    template relies on, such as `render_partial` itself).
 
 Examples:
     ```python

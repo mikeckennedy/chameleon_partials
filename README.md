@@ -117,6 +117,17 @@ We can finally generate the list of video blocks as follows:
 This time, we reframe each item in the list from the outer template (called `v`) as the `video` model
 in the inner HTML section.
 
+## Choosing Partials Safely
+
+Choose the partial in your code, never from request data. `render_partial()` refuses a name that would reach outside the registered template folder (an absolute path, a `..` out of the folder, or a `package:path` spec), but a request that picks the fragment should still be mapped to a name you wrote rather than used to build the path:
+
+```python
+PARTIALS = {'card': 'shared/partials/video_square.pt', 'row': 'shared/partials/video_row.pt'}
+html = render_partial(PARTIALS[request.params['style']], video=video)
+```
+
+Pass the model as named keyword arguments too. Spreading a request's parameters into it (`render_partial(name, **request.params)`) lets a parameter replace a name the template relies on, including `render_partial` itself.
+
 ## The View Methods
 
 In order to share the `render_partial()` function with your template, you'll need to pass it along to the
