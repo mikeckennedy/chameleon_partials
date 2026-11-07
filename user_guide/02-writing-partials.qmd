@@ -2,11 +2,13 @@
 title: "Writing partials"
 ---
 
-A partial is a Chameleon template rendered by `render_partial`. This page covers the rules that are not obvious from the call itself: how the name resolves, how the model gets in, how partials nest, and how they fit with METAL layouts.
+Once the thumbnail renders, the temptation is to turn every repeated block in the app into a partial on the same afternoon. Go ahead, but read this page first. It is the rulebook, and most of the rules exist because someone, usually the author, got them wrong once.
 
-## Paths are relative to the registered folder
+## Rule one: paths are relative to the registered folder
 
-The first argument to `render_partial` is a path relative to the folder you passed to `register_extensions`. It is never relative to the template making the call, even when that template is itself a partial in a subfolder. A partial in `shared/partials/` that wants a sibling still writes the full path:
+This is the rule everyone trips on, so it goes first. The first argument to `render_partial` is a path relative to the folder you gave `register_extensions`. It is never relative to the template making the call, even when that template is itself a partial sitting in a subfolder.
+
+Here is the full video card from the demo app. It lives in `shared/partials/` and it wants the thumbnail that lives right next to it. It still spells out the whole path:
 
 ```html
 <!-- templates/shared/partials/video_square.pt -->
@@ -20,29 +22,31 @@ The first argument to `render_partial` is a path relative to the folder you pass
 </div>
 ```
 
-This differs from Chameleon's own `metal:use-macro="load: ../shared/_layout.pt"`, where the path is relative to the current template file. Keep the two rules apart: `load:` is relative to the file, `render_partial` is relative to the folder.
+The reason it trips people is that Chameleon itself uses the other convention. A layout is pulled in with `metal:use-macro="load: ../shared/_layout.pt"`, and that `load:` path is relative to the current template file. So in one `.pt` file you may have both kinds of path side by side. The rule of thumb: `load:` thinks like a file, `render_partial` thinks like the folder.
 
-The name must point at a regular file inside the registered folder. An absolute path, a `..` that leaves the folder, a `package:path` spec, or a folder name is reported as a missing template, with Chameleon's own `ValueError` (`Template not found: ...`). A `..` that stays inside the folder is fine. Surrounding whitespace and redundant `./` or `//` segments are normalized away, so every spelling of a file compiles and caches one template. On macOS and Windows, a differently cased spelling still loads but caches separately, so pick one spelling.
+There is a second half to this rule. The name has to point at a regular file inside the registered folder. An absolute path, a `..` that climbs out of the folder, a `package:path` spec, or a bare folder name is reported as a missing template, with Chameleon's own `ValueError` reading `Template not found: ...`. A `..` that stays inside the folder is fine. Surrounding whitespace and redundant `./` or `//` segments are normalised away, so every spelling of a file compiles and caches as one template. On macOS and Windows a differently cased spelling will still load, but it caches as a second template, so pick one spelling and stick to it.
 
-## The model is the keyword arguments
+## Rule two: the model is exactly what you pass
 
-Everything after the path is passed to the fragment as its model. Any Python object works, and the template uses it through ordinary Chameleon expressions:
+Everything after the path becomes the fragment's model. Any Python object is welcome, and the template reaches into it with ordinary Chameleon expressions:
 
 ```html
 ${ render_partial('shared/partials/user_card.pt', user=user, show_email=False) }
 ```
 
-A name the template references but the call does not pass raises Chameleon's `NameError` at render time. There are no defaults, so pass every name the partial uses, or give the partial a `tal:define` with a fallback.
+What you do not pass, the partial does not have. A name the template references but the call left out raises Chameleon's `NameError` at render time, with the expression and line number in the message. There are no defaults on the call side, so either pass every name the partial uses or give the partial its own fallback with `tal:define`.
 
-Three names are not yours to use. `encoding` is reserved because `render_partial` passes `encoding='utf-8'` to Chameleon itself, and supplying it raises `TypeError`. `translate` and `target_language` have special meaning to Chameleon's i18n support, and `repeat` is the name of Chameleon's loop-state object, so a value under any of those names will not reach your template the way you expect.
+Four names in the model are already spoken for. `encoding` belongs to the package, which passes `encoding='utf-8'` into Chameleon on every render; supply your own and Python raises `TypeError` for the duplicate keyword. `translate` and `target_language` are Chameleon's i18n hooks, and `repeat` is the name of Chameleon's loop-state object. A value under any of those names will not reach your template the way you expect, so call it something else.
 
-## Nesting
+## Fragments all the way down
 
-Every partial automatically receives `render_partial` in its model, so a partial can render other partials with no extra wiring. The `video_square.pt` fragment above does this with `video_image.pt`. Nesting depth is not limited by the package. A partial that includes itself without a stopping condition raises Python's `RecursionError`.
+Every partial automatically receives `render_partial` in its model, so a partial can render other partials with no extra wiring. The video card above does exactly that with the thumbnail, and the thumbnail could do it again if it had anything smaller to delegate to. The package puts no limit on the depth.
+
+The one thing it cannot save you from is a partial that renders itself without a way to stop. That ends, as recursion in Python always does, with `RecursionError`. If a fragment genuinely needs to recurse, say for a comment thread, wrap the inner call in a `tal:condition` that checks a depth or a children list.
 
 ## Loops
 
-Call `render_partial` inside a `tal:repeat` to render a fragment per item. The loop variable in the outer template can be renamed to whatever the partial expects:
+Put the call inside a `tal:repeat` and you get one fragment per item. The loop variable in the outer template can be named whatever reads well there, and renamed to whatever the partial expects on the way in:
 
 ```html
 <span class="video" tal:repeat="v videos">
@@ -50,9 +54,11 @@ Call `render_partial` inside a `tal:repeat` to render a fragment per item. The l
 </span>
 ```
 
+This is the listing page of the demo app in its entirety, give or take a heading. Each `v` becomes `video` inside the card, the card renders the thumbnail, and the page is done.
+
 ## Layouts
 
-Partials compose with METAL layout inheritance. A page fills a layout's slot and renders partials inside the slot. The layout itself is an ordinary Chameleon template; by convention it starts with an underscore so it is easy to tell apart from pages and partials:
+Partials and METAL layouts are made for different jobs and they get along well. A layout is the stage: the `<html>` skeleton, the navigation, the footer, with a slot where the page goes. Partials are the props. A page fills the slot and renders partials inside it:
 
 ```html
 <!-- templates/shared/_layout.pt -->
@@ -75,11 +81,13 @@ Partials compose with METAL layout inheritance. A page fills a layout's slot and
 </div>
 ```
 
-A partial can use a layout too, since it is just a template, but a fragment meant to be inserted into a page normally should not.
+The underscore on `_layout.pt` is a convention, not a requirement. It makes the one file that is never rendered directly stand out in a folder listing. Note the two path styles in `index.pt`, right next to each other: `load:` climbing up a directory, `render_partial` starting from the root.
+
+A partial can use a layout too, because it is just a template. A fragment meant to be dropped into the middle of a page normally should not, since the page already has one.
 
 ## Rendering a fragment from Python
 
-`render_partial` is a normal Python function, so a view can call it directly. This is how to return just a fragment for an HTMX request, build the body of an email, or assert on markup in a test. The return value is an `HTML` object; read its `html_text` attribute for the string:
+`render_partial` is an ordinary Python function, and that opens a door. A view can call it directly to return just a card for an HTMX request, to build the body of an email, or to check markup in a test. The return value is the `HTML` wrapper; its `html_text` attribute is the string:
 
 ```python
 import chameleon_partials
@@ -88,22 +96,24 @@ fragment = chameleon_partials.render_partial('shared/partials/video_square.pt', 
 return Response(fragment.html_text)
 ```
 
-Pass the `HTML` object itself, not `html_text`, when the value goes back into another template. Chameleon escapes a plain string and inserts an `HTML` object as is.
+The direction matters. Going out to the wire, you want the string, so read `html_text`. Going back into another template, pass the `HTML` object itself. Chameleon escapes a plain string and inserts an `HTML` object verbatim, and the [Troubleshooting](troubleshooting.qmd) page has an entry for what it looks like when you mix those up.
 
-## Choosing partials safely
+## Never let the request choose the file
 
-Choose the partial in your code, never from request data. The containment check above stops a name from reaching outside the template folder, but a request that picks the fragment should still be mapped to a name you wrote rather than used to build the path:
+It is tempting, once fragments are cheap, to let a query parameter pick which one to render: `?style=card` or `?style=row`. Do it, but do it with a lookup table, never by building the path from the parameter:
 
 ```python
 PARTIALS = {'card': 'shared/partials/video_square.pt', 'row': 'shared/partials/video_row.pt'}
 html = render_partial(PARTIALS[request.params['style']], video=video)
 ```
 
-Pass the model as named keyword arguments too. Spreading a request's parameters into the call (`render_partial(name, **request.params)`) lets a parameter replace a name the template relies on. `render_partial` is only injected into the model when the key is absent, so a request parameter named `render_partial` would take its place.
+The containment check from rule one will refuse a name that climbs out of the templates folder, and that check is a safety net, not a design. A table of names you wrote means the request can choose between two fragments and nothing else.
+
+The same caution applies to the model. Spreading a request's parameters straight into the call, as in `render_partial(name, **request.params)`, lets anyone who can type a URL set any name the template relies on. `render_partial` is only injected into the model when the key is absent, so a parameter literally called `render_partial` would take its place. Pass named keyword arguments and the request stays on the outside.
 
 ## A layout for the templates folder
 
-The package does not require any particular layout, but this one keeps pages, layouts, and partials apart and matches the example app:
+The package has no opinion about folder structure, but the demo app's structure has held up well. Pages grouped by area, one layout, and all the fragments in one place where you can find them:
 
 ```text
 templates/

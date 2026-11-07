@@ -2,9 +2,9 @@
 title: "Getting started"
 ---
 
-This page takes you from an empty project to a rendered fragment. It assumes a web framework that already renders Chameleon templates, such as Pyramid with `pyramid_chameleon`, or FastAPI with Chameleon called directly.
+This page takes an app from nothing to a rendered fragment in four moves. It assumes a framework that already renders Chameleon templates, such as Pyramid with `pyramid_chameleon`, or FastAPI calling Chameleon directly. The snippets come from the demo video site, so the fragment we build is the YouTube thumbnail that every video card shares.
 
-## Install
+## Move one: install
 
 ```bash
 uv add chameleon-partials
@@ -12,11 +12,11 @@ uv add chameleon-partials
 pip install chameleon-partials
 ```
 
-The distribution name on PyPI is `chameleon-partials` with a hyphen. The import name is `chameleon_partials` with an underscore. The only runtime dependency is Chameleon.
+Two spellings, and both matter. The distribution on PyPI is `chameleon-partials` with a hyphen. The module you import is `chameleon_partials` with an underscore. The package is pure Python and its only runtime dependency is Chameleon itself.
 
-## Register the template folder once
+## Move two: tell the library where the templates live
 
-Call `register_extensions` once at application startup, before any template renders. It takes the root folder of your Chameleon templates. Every partial is later named by its path relative to this folder.
+The library needs to know one thing before it can do anything: the root folder of your Chameleon templates. Tell it once, at startup, before any template renders:
 
 ```python
 from pathlib import Path
@@ -27,17 +27,19 @@ folder = (Path(__file__).parent / 'templates').as_posix()
 chameleon_partials.register_extensions(folder, auto_reload=True)
 ```
 
-Build the folder path from `__file__` so it does not depend on the working directory. Set `auto_reload=True` while developing so edits to a template show up without a restart, and leave it at the default `False` in production.
+Build the path from `__file__` rather than a relative string, so it works no matter which directory the process was launched from. Every partial you render later is named by its path relative to this folder, which is why this is the only place the folder ever appears.
 
-In a Pyramid app this call goes in the `main` function that builds the WSGI app. In a FastAPI app it goes at module level next to the app object or in the lifespan startup. Registration is process-wide module state, so call it from single-threaded startup code, not from a request handler.
+`auto_reload=True` makes Chameleon check a template's modification time on each render and recompile when it changed, so you can edit a fragment and refresh the browser. It costs a stat call per render, so leave it at the default `False` in production and restart on deploy.
 
-Calling it a second time after a successful registration does nothing. That is intended, so repeated startup calls are safe. See [Testing](testing.qmd) for how to point at a different folder.
+In a Pyramid app this call belongs in the `main` function that builds the WSGI app. In FastAPI it goes at module level beside the app object, or in the lifespan startup. The registration is process-wide module state, so it wants single-threaded startup code, not a request handler.
 
-## Make render_partial available to templates
+One more thing worth knowing now rather than later: once a call to `register_extensions` has succeeded, calling it again does nothing. That is on purpose, so an app that initialises twice does not rebuild its loader, and it is exactly the behaviour a test suite needs to know about. [Testing](testing.qmd) covers how to point tests at their own folder.
 
-A template can only call `render_partial` if the name is in its model. Wire that once, in whichever way your framework supports.
+## Move three: open the door for your templates
 
-In Pyramid, add a `BeforeRender` subscriber. Drop this file into your `views` package so `config.scan()` picks it up, and every template gets `render_partial` with no change to the views:
+A template can only call `render_partial` if that name is in its model. Chameleon has no global namespace to drop it into, so you wire it once in whatever way your framework offers.
+
+Pyramid has the nicest answer. A `BeforeRender` subscriber runs before every template render and can add names to the model. Put this file inside the package that `config.scan()` covers and forget about it:
 
 ```python
 # views/partials_middleware.py
@@ -51,18 +53,20 @@ def add_global(event):
     event['render_partial'] = chameleon_partials.render_partial
 ```
 
-In any other framework, extend the model dictionary before you hand it to the template:
+Every view in the app now returns its model exactly as before, and every template can call `render_partial`.
+
+Elsewhere, extend the model dictionary on its way out of the view:
 
 ```python
 model = {'videos': videos}
 return chameleon_partials.extend_model(model)
 ```
 
-`extend_model` adds the `render_partial` key to the dictionary you pass and returns the same dictionary. It accepts `None` and returns a new dictionary in that case.
+`extend_model` adds the `render_partial` key to the dictionary you give it and returns that same dictionary. Hand it `None` and you get a fresh dictionary back.
 
-## Write a partial
+## Move four: write a fragment and render it
 
-A partial is a plain Chameleon template holding a fragment of HTML. It does not need a layout, a `<html>` element, or a `metal:define-macro`. Keep partials together under a folder such as `shared/partials/` so they are easy to find:
+A partial is a plain Chameleon template holding a piece of HTML. No layout, no `<html>` element, no `metal:define-macro`. Here is the thumbnail, as it lives in the demo app:
 
 ```html
 <!-- templates/shared/partials/video_image.pt -->
@@ -72,11 +76,9 @@ A partial is a plain Chameleon template holding a fragment of HTML. It does not 
      title="${ video.title }">
 ```
 
-The template references `video` and `classes`. Those names come from the keyword arguments of the `render_partial` call that renders it.
+It uses two names, `video` and `classes`. Nothing in the file says where those come from, and that is the point: they come from whoever renders it. A folder named `shared/partials/` is only a convention, but it is a good one, because six months from now you will want to know which `.pt` files are pages and which are pieces.
 
-## Render it
-
-From any page template, or from another partial, call `render_partial` inside a `${ }` expression. The first argument is the path relative to the registered folder. The keyword arguments become the fragment's model:
+Now render it. From a page template, or from inside another partial, call `render_partial` in a `${ }` expression. The first argument is the path relative to the registered folder, and the keyword arguments are the fragment's model:
 
 ```html
 <a href="https://www.youtube.com/watch?v=${ video.id }" target="_blank">
@@ -84,6 +86,6 @@ From any page template, or from another partial, call `render_partial` inside a 
 </a>
 ```
 
-`render_partial` returns an `HTML` object rather than a string. Chameleon sees its `__html__` method and inserts the markup as is, without escaping it. A plain string in the same position would be escaped.
+Reload the page and the thumbnail is there. Behind the scenes `render_partial` looked the file up in the registered folder, rendered it with `video` and `classes` in scope, and returned an `HTML` object rather than a string. Chameleon notices the object's `__html__` method and inserts the markup as is. Had the function returned a plain string, Chameleon would have escaped it and you would be looking at a literal `<img` on the page. That small wrapper is what makes the whole thing feel native.
 
-That is the whole mechanism. [Writing partials](writing-partials.qmd) covers nesting, loops, layouts, and the rules a partial name has to follow.
+Those four moves are the entire library. Everything else is the rulebook, and [Writing partials](writing-partials.qmd) is where it lives.

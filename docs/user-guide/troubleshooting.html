@@ -124,15 +124,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
   <link rel="alternate" type="text/markdown" href="troubleshooting.md">
   <link rel="canonical" href="https://mkennedy.codes/docs/chameleon-partials/user-guide/troubleshooting.html">
-  <meta name="description" content="Each heading below is an error you can hit in normal use, with the cause and the fix. The first group comes from chameleon_partials and is raised as...">
+  <meta name="description" content="This is a field guide. Each heading is an error message, or the symptom you see when there is no message, so you can search this page for the exact...">
   <meta property="og:type" content="website">
   <meta property="og:title" content="Troubleshooting – Chameleon Partials | Chameleon Partials">
-  <meta property="og:description" content="Each heading below is an error you can hit in normal use, with the cause and the fix. The first group comes from chameleon_partials and is raised as...">
+  <meta property="og:description" content="This is a field guide. Each heading is an error message, or the symptom you see when there is no message, so you can search this page for the exact...">
   <meta property="og:url" content="https://mkennedy.codes/docs/chameleon-partials/user-guide/troubleshooting.html">
   <meta property="og:site_name" content="Chameleon Partials">
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="Troubleshooting – Chameleon Partials | Chameleon Partials">
-  <meta name="twitter:description" content="Each heading below is an error you can hit in normal use, with the cause and the fix. The first group comes from chameleon_partials and is raised as...">
+  <meta name="twitter:description" content="This is a field guide. Each heading is an error message, or the symptom you see when there is no message, so you can search this page for the exact...">
 </head>
 
 <body class="nav-sidebar floating nav-fixed quarto-light"><a id="quarto-skip-link" class="visually-hidden-focusable" href="#quarto-document-content">Skip to main content</a>
@@ -272,66 +272,67 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<p>Each heading below is an error you can hit in normal use, with the cause and the fix. The first group comes from chameleon_partials and is raised as <a href="../reference/PartialsException.html#chameleon_partials.PartialsException" class="gdls-link gdls-code">PartialsException</a>. The rest come from Chameleon or Python and pass through unchanged, because the package never wraps them.</p>
+<p>This is a field guide. Each heading is an error message, or the symptom you see when there is no message, so you can search this page for the exact text in your terminal. Under each one: what happened, why, and what to do about it.</p>
+<p>The first five come from chameleon_partials itself and arrive as <a href="../reference/PartialsException.html#chameleon_partials.PartialsException" class="gdls-link gdls-code">PartialsException</a>. They all mean the library was set up or called wrongly, and they are all quick to fix. Everything after that comes from Chameleon or Python and passes through unchanged, because the package deliberately never wraps another library’s errors.</p>
 <section id="partialsexception-you-must-call-register_extensions-before-this-function-can-be-used" class="level1">
 <h1>PartialsException: You must call register_extensions() before this function can be used</h1>
-<p><a href="../reference/render_partial.html#chameleon_partials.render_partial" class="gdls-link gdls-code">render_partial</a> ran before <a href="../reference/register_extensions.html#chameleon_partials.register_extensions" class="gdls-link gdls-code">register_extensions</a>. Move the registration to application startup, before the first request. In Pyramid that is the <code>main</code> function that builds the WSGI app. In a test, add a fixture that registers the test template folder, as shown in <a href="../user-guide/testing.html">Testing</a>.</p>
+<p><a href="../reference/render_partial.html#chameleon_partials.render_partial" class="gdls-link gdls-code">render_partial</a> ran before anyone told the library where the templates are. This is the classic first-request-in-a-new-project error. Move <a href="../reference/register_extensions.html#chameleon_partials.register_extensions" class="gdls-link gdls-code">register_extensions</a> to application startup, before the first request is served: in Pyramid, the <code>main</code> function that builds the WSGI app. In a test, add a fixture that registers the test template folder, as shown in <a href="../user-guide/testing.html">Testing</a>.</p>
 </section>
 <section id="partialsexception-the-template_folder-must-be-specified" class="level1">
 <h1>PartialsException: The template_folder must be specified</h1>
-<p><a href="../reference/register_extensions.html#chameleon_partials.register_extensions" class="gdls-link gdls-code">register_extensions</a> was called with an empty string or <code>None</code>. Pass the path to your templates folder. Build it from <code>__file__</code> so it does not depend on the working directory:</p>
+<p><a href="../reference/register_extensions.html#chameleon_partials.register_extensions" class="gdls-link gdls-code">register_extensions</a> was called with an empty string or <code>None</code>, usually from a setting that was never filled in. Pass the path to the templates folder, and build it from <code>__file__</code> so the working directory cannot change the answer:</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>folder <span class="op">=</span> (Path(<span class="va">__file__</span>).parent <span class="op">/</span> <span class="st">'templates'</span>).as_posix()</span></code></pre></div>
 </section>
 <section id="partialsexception-the-specified-template-folder-must-be-a-folder" class="level1">
 <h1>PartialsException: The specified template folder must be a folder</h1>
-<p>The path passed to <a href="../reference/register_extensions.html#chameleon_partials.register_extensions" class="gdls-link gdls-code">register_extensions</a> does not exist or is a file. Check the spelling and that the path is absolute or relative to the right place. The failed call does not mark the package as registered, so after fixing the path a plain retry works.</p>
+<p>The path exists in your head but not on disk, or it points at a file. Check the spelling and whether the path is meant to be absolute or relative. The failed call did not mark the library as registered, so once the path is right, a plain retry works. No flag to reset.</p>
 </section>
 <section id="partialsexception-the-model-must-be-a-dictionary" class="level1">
 <h1>PartialsException: The model must be a dictionary</h1>
-<p><a href="../reference/extend_model.html#chameleon_partials.extend_model" class="gdls-link gdls-code">extend_model</a> was given something other than a <code>dict</code> or <code>None</code>. Pass the view-model dictionary, or <code>None</code> to get a new one back.</p>
+<p><a href="../reference/extend_model.html#chameleon_partials.extend_model" class="gdls-link gdls-code">extend_model</a> was handed something other than a <code>dict</code> or <code>None</code>. A common way to get here is returning a list or a model object from a view and wrapping that. Pass the view-model dictionary, or <code>None</code> to get a fresh one back.</p>
 </section>
 <section id="valueerror-template-not-found" class="level1">
 <h1>ValueError: Template not found</h1>
-<p><a href="../reference/render_partial.html#chameleon_partials.render_partial" class="gdls-link gdls-code">render_partial</a> could not resolve the name to a regular file inside the registered folder. Check these causes in order:</p>
+<p><a href="../reference/render_partial.html#chameleon_partials.render_partial" class="gdls-link gdls-code">render_partial</a> could not turn the name into a regular file inside the registered folder. This is the most common error on this page, and it has five causes. Work through them in order:</p>
 <ul>
-<li>The path is relative to the registered folder, not to the calling template. From inside <code>shared/partials/a.pt</code>, a sibling is <code>shared/partials/b.pt</code>, not <code>b.pt</code> and not <code>./b.pt</code>.</li>
-<li>The name points at a folder rather than a file, for example <code>shared/partials</code> without the file name.</li>
-<li>The name reaches outside the registered folder: an absolute path, a <code>..</code> that leaves the folder, or a <code>package:path</code> spec. These are refused on purpose. Move the file under the registered folder or register a higher folder.</li>
-<li>The case does not match on Linux. <code>Video_Square.pt</code> and <code>video_square.pt</code> are different files there, even though macOS and Windows would load either.</li>
-<li>The registered folder is not the one you think, usually because <a href="../reference/register_extensions.html#chameleon_partials.register_extensions" class="gdls-link gdls-code">register_extensions</a> was called earlier with a different folder and the second call was a no-op. See the next heading.</li>
+<li>The path is relative to the registered folder, not to the calling template. From inside <code>shared/partials/a.pt</code>, a sibling is <code>shared/partials/b.pt</code>, not <code>b.pt</code> and not <code>./b.pt</code>. This is the cause nine times out of ten.</li>
+<li>The name points at a folder rather than a file, for example <code>shared/partials</code> without the file name on the end.</li>
+<li>The name reaches outside the registered folder: an absolute path, a <code>..</code> that climbs out, or a <code>package:path</code> spec. These are refused on purpose. Move the file under the registered folder, or register a folder higher up.</li>
+<li>The case does not match on Linux. <code>Video_Square.pt</code> and <code>video_square.pt</code> are different files there, even though macOS and Windows would cheerfully load either. This one tends to appear the first time the app runs in a container.</li>
+<li>The registered folder is not the one you think, usually because an earlier <a href="../reference/register_extensions.html#chameleon_partials.register_extensions" class="gdls-link gdls-code">register_extensions</a> call pointed somewhere else and the second call was a no-op. See the next heading.</li>
 </ul>
 </section>
 <section id="render_partial-uses-the-wrong-folder-or-a-second-register_extensions-is-ignored" class="level1">
 <h1>render_partial uses the wrong folder, or a second register_extensions is ignored</h1>
-<p>With the default <code>cache_init=True</code>, <a href="../reference/register_extensions.html#chameleon_partials.register_extensions" class="gdls-link gdls-code">register_extensions</a> does nothing once a previous call succeeded. In an application that is the behaviour you want. In tests, or in a process that must switch folders, pass <code>cache_init=False</code> or set <code>chameleon_partials.has_registered_extensions = False</code> before registering again.</p>
+<p>With the default <code>cache_init=True</code>, <a href="../reference/register_extensions.html#chameleon_partials.register_extensions" class="gdls-link gdls-code">register_extensions</a> does nothing once a previous call has succeeded. In an application that is the behaviour you want. In a test suite, or in a process that must switch folders, pass <code>cache_init=False</code> or set <code>chameleon_partials.has_registered_extensions = False</code> before registering again.</p>
 </section>
 <section id="nameerror-render_partial" class="level1">
 <h1>NameError: render_partial</h1>
-<p>Chameleon could not find <a href="../reference/render_partial.html#chameleon_partials.render_partial" class="gdls-link gdls-code">render_partial</a> in the template’s model. The partial itself always gets it, so this happens in a page template. In Pyramid, make sure the <code>BeforeRender</code> subscriber module is inside a package that <code>config.scan()</code> covers and that it is imported. In other frameworks, return <code>chameleon_partials.extend_model(model)</code> from the view instead of <code>model</code>.</p>
+<p>Chameleon went looking for <a href="../reference/render_partial.html#chameleon_partials.render_partial" class="gdls-link gdls-code">render_partial</a> in the template’s model and found nothing. A partial always receives it, so this only happens in a page template, and it means the wiring step was skipped or did not take. In Pyramid, check that the module holding the <code>BeforeRender</code> subscriber sits inside a package that <code>config.scan()</code> covers; a subscriber in a file nobody imports is a subscriber that never registers. In other frameworks, make sure the view returns <code>chameleon_partials.extend_model(model)</code> and not just <code>model</code>.</p>
 </section>
 <section id="nameerror-some-other-name" class="level1">
 <h1>NameError: some other name</h1>
-<p>A partial references a name that the <a href="../reference/render_partial.html#chameleon_partials.render_partial" class="gdls-link gdls-code">render_partial</a> call did not pass. Add the keyword argument to the call, or give the partial a fallback with <code>tal:define</code>. Chameleon’s error message shows the expression, the file, and the line.</p>
+<p>A partial references a name that the <a href="../reference/render_partial.html#chameleon_partials.render_partial" class="gdls-link gdls-code">render_partial</a> call did not pass. Chameleon’s message shows the expression, the file, and the line, so the fix is usually obvious: add the keyword argument to the call, or give the partial a fallback with <code>tal:define</code> if the value is genuinely optional.</p>
 </section>
 <section id="typeerror-render-got-multiple-values-for-keyword-argument-encoding" class="level1">
 <h1>TypeError: render() got multiple values for keyword argument ‘encoding’</h1>
-<p>The model passed a value named <code>encoding</code>. That name is taken by the package’s own call into Chameleon. Rename the variable.</p>
+<p>The model included a value called <code>encoding</code>. That name is already taken by the package’s own call into Chameleon. Rename the variable; <code>charset</code> or <code>text_encoding</code> both work.</p>
 </section>
 <section id="the-fragment-shows-up-as-escaped-text" class="level1">
 <h1>The fragment shows up as escaped text</h1>
-<p>The markup appears literally, with <code>&amp;lt;div&amp;gt;</code> where tags should be. The value inserted into the template was a plain string, usually <code>html_text</code>, rather than the <code>HTML</code> object that <a href="../reference/render_partial.html#chameleon_partials.render_partial" class="gdls-link gdls-code">render_partial</a> returns. Pass the object through, and only read <code>html_text</code> where you need a <code>str</code>, such as a response body or a test assertion.</p>
+<p>The page displays the markup literally, <code>&amp;lt;div&amp;gt;</code> and all. The value inserted into the template was a plain string, almost always <code>html_text</code>, instead of the <code>HTML</code> object that <a href="../reference/render_partial.html#chameleon_partials.render_partial" class="gdls-link gdls-code">render_partial</a> returns. Pass the object through to the template and read <code>html_text</code> only at the edge, where you need a real <code>str</code>: a response body, an email, a test assertion.</p>
 </section>
 <section id="edits-to-a-template-do-not-show-up" class="level1">
 <h1>Edits to a template do not show up</h1>
-<p>Chameleon compiled the template once and is serving the compiled version. Register with <code>auto_reload=True</code> during development, and restart the process after template changes in production, where the default <code>False</code> is the right setting.</p>
+<p>You changed the file, refreshed, and nothing happened. Chameleon compiled the template once and is serving the compiled version. Register with <code>auto_reload=True</code> during development so it checks the file’s timestamp on each render. In production, leave it <code>False</code> and restart after deploying template changes.</p>
 </section>
 <section id="recursionerror" class="level1">
 <h1>RecursionError</h1>
-<p>A partial renders itself, directly or through another partial, without a condition that stops. Add a <code>tal:condition</code> around the nested call, or pass a depth that the partial checks.</p>
+<p>A partial renders itself, directly or through a chain of other partials, with nothing to stop it. Add a <code>tal:condition</code> around the nested call that checks a depth counter or an empty children list, and pass that value down on each call.</p>
 </section>
 <section id="isadirectoryerror-or-a-file-outside-the-templates-folder-rendered" class="level1">
 <h1>IsADirectoryError, or a file outside the templates folder rendered</h1>
-<p>Both were possible before 0.2.2 and 0.2.1 respectively. Upgrade. Current releases report a folder name or an outside path as <code>ValueError: Template not found</code>. The check is lexical, so a symlink inside the folder is still followed; keep symlinks out of the templates folder if that matters to you.</p>
+<p>Both were possible in older releases: the directory error until 0.2.2, the outside file until 0.2.1. Upgrade. Current releases report a folder name or an outside path as <code>ValueError: Template not found</code>, and the containment check sees the name exactly as Chameleon’s loader does. The check is lexical, so a symlink inside the folder is still followed; keep symlinks out of the templates folder if that matters to you.</p>
 
 
 </section>

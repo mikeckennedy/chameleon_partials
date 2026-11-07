@@ -2,7 +2,11 @@
 title: "User Guide"
 ---
 
-Chameleon templates have no built-in way to reuse a small fragment of HTML across pages. chameleon_partials adds one function, `render_partial`, that a template calls to insert a fragment and pass it a model:
+Every web app has a piece of HTML it cannot stop repeating. In the demo app that ships with this library it is a video card: a YouTube thumbnail, the channel name, and a view count. The card appears on the home page in a row of three. It appears again on the listing page, dozens of times. The first time you build it you copy the markup from one template into the other and move on, because that is what Tuesday afternoons are for.
+
+Then the view count needs a thousands separator. You fix it on the home page, ship it, and a week later someone sends a screenshot of the listing page still showing `10302 views`. Now there are two cards, and they will keep drifting apart for as long as the app lives.
+
+Chameleon has no built-in answer to this. It has macros, which are good at layouts and clumsy at small reusable pieces with their own data. chameleon_partials adds one function, `render_partial`, that a template calls to drop a fragment in place and hand it a model:
 
 ```html
 <span class="video" tal:repeat="v videos">
@@ -10,14 +14,14 @@ Chameleon templates have no built-in way to reuse a small fragment of HTML acros
 </span>
 ```
 
-The fragment is an ordinary Chameleon template that lives under the folder you register once at startup. It receives the keyword arguments as its model, it can call `render_partial` itself to nest further fragments, and the markup it produces is inserted unescaped.
+The fragment is an ordinary Chameleon template living under a folder you register once at startup. It gets the keyword arguments as its model, it can call `render_partial` itself to pull in smaller fragments, and the markup it produces is inserted unescaped, so the page sees HTML rather than a string of angle brackets. The video card becomes one file, and the thousands separator gets fixed once.
 
 ## Where to go next
 
-- [Getting started](getting-started.qmd): install the package, register the template folder, make `render_partial` available to your templates, and render a first fragment.
-- [Writing partials](writing-partials.qmd): how paths resolve, passing a model, nesting, loops, METAL layouts, rendering a fragment from Python, and choosing partials safely.
-- [Testing](testing.qmd): a pytest fixture for the one-time registration, asserting on rendered markup, and what the error types promise.
-- [Troubleshooting](troubleshooting.qmd): every error the package or Chameleon raises in normal use, what causes it, and how to fix it.
-- [API reference](../reference/index.qmd): the four public names with their full docstrings.
+- [Getting started](getting-started.qmd) takes an app from `pip install` to its first rendered fragment in four moves: install, register the folder, hand `render_partial` to your templates, and call it.
+- [Writing partials](writing-partials.qmd) is the rulebook. How a partial's path resolves (this is the one rule everyone trips on), how the model gets in, nesting, loops, METAL layouts, rendering a fragment straight from Python for HTMX, and why the request must never choose the file.
+- [Testing](testing.qmd) shows that partials are plain functions over plain files, which makes them pleasant to test, as long as you know about the one-shot registration.
+- [Troubleshooting](troubleshooting.qmd) is a field guide to every error the package or Chameleon raises in normal use. Each heading is the message you will see, so you can search for it.
+- [API reference](../reference/index.qmd) holds the four public names with their full docstrings.
 
-The [example Pyramid app](https://github.com/mikeckennedy/chameleon_partials/tree/main/example) in the repository shows all of this working together: the `BeforeRender` subscriber, nested partials inside `tal:repeat` loops, and METAL layout inheritance.
+The [example Pyramid app](https://github.com/mikeckennedy/chameleon_partials/tree/main/example) in the repository is the video site described above, and it is the source of every snippet in this guide: a `BeforeRender` subscriber, nested partials inside `tal:repeat` loops, and METAL layout inheritance, all working together in about a dozen files.

@@ -1,11 +1,15 @@
 # Testing
 
-Partials are plain functions over plain files, so they are easy to test without a web framework: register a folder, call [render_partial](../reference/render_partial.md#chameleon_partials.render_partial), and assert on the string.
+Template code has a reputation for being hard to test, and it is mostly earned: you need a running app, a request, a session, and a browser-shaped tool to read the result. Partials sidestep all of that. [render_partial](../reference/render_partial.md#chameleon_partials.render_partial) is a function that takes a path and some keyword arguments and returns a string wrapped in an object. You can call it from a test the way you would call any other function, with no web framework in sight.
+
+There is one thing to know first, and it is the reason this page exists.
 
 
-# A fixture for registration
+# The one-shot registration, and the fixture that tames it
 
-[register_extensions](../reference/register_extensions.md#chameleon_partials.register_extensions) keeps its state in module globals, and with the default `cache_init=True` a second call after a successful one does nothing. A test suite that registers its own template folder therefore has to either pass `cache_init=False` or reset the flag after each test, otherwise the first folder registered wins for the whole session:
+[register_extensions](../reference/register_extensions.md#chameleon_partials.register_extensions) keeps its state in module globals, and with the default `cache_init=True`, a second call after a successful one is a no-op. In production that is a feature. In a test suite it is a trap: the first folder anyone registers wins for the rest of the session, and a test that registers a different folder will quietly keep rendering from the old one.
+
+The fix is a fixture that registers the test folder and then clears the flag on the way out, so the next test starts clean:
 
 ``` python
 from pathlib import Path
@@ -23,12 +27,14 @@ def registered_extension():
     chameleon_partials.has_registered_extensions = False
 ```
 
-Resetting `has_registered_extensions` is enough; the next [register_extensions](../reference/register_extensions.md#chameleon_partials.register_extensions) call builds a fresh loader. A registration that raised, for example because the folder does not exist, does not set the flag, so a failed call can simply be retried.
+Resetting `has_registered_extensions` is all it takes. The next [register_extensions](../reference/register_extensions.md#chameleon_partials.register_extensions) call builds a fresh loader as if nothing had happened. Passing `cache_init=False` on every call works too, but the fixture keeps the knowledge in one place.
+
+A registration that raised, say because the folder does not exist, never sets the flag in the first place. That means a failed call can simply be retried once the path is fixed, and it means a typo in a fixture path fails loudly rather than leaving a half-registered module behind.
 
 
 # Asserting on markup
 
-[render_partial](../reference/render_partial.md#chameleon_partials.render_partial) returns an `HTML` object. Read `html_text` for the rendered string and assert on it:
+With the fixture in place, a rendering test is three lines. Call the function, read `html_text`, look for the markup you expect:
 
 ``` python
 def test_render_with_data(registered_extension):
@@ -36,12 +42,14 @@ def test_render_with_data(registered_extension):
     assert '<span>Your name is Sarah and age is 32</span>' in html.html_text
 ```
 
-Nested partials need no special setup, because [render_partial](../reference/render_partial.md#chameleon_partials.render_partial) is injected into every partial's model. A test that renders the outer partial covers the inner one too.
+Nested partials need nothing extra, because [render_partial](../reference/render_partial.md#chameleon_partials.render_partial) is injected into every partial's model. A test that renders the video card has also exercised the thumbnail inside it, which is usually what you want: test the card people see, not the pieces in isolation.
 
 
-# Testing the error paths
+# Testing the promises about errors
 
-The package promises two things about errors, and tests can rely on both. [PartialsException](../reference/PartialsException.md#chameleon_partials.PartialsException) is raised only for misuse: rendering before registration, registering an empty or non-existent folder, or passing a non-dictionary to [extend_model](../reference/extend_model.md#chameleon_partials.extend_model). Everything Chameleon raises passes through unchanged, so a missing template is Chameleon's `ValueError`, not [PartialsException](../reference/PartialsException.md#chameleon_partials.PartialsException):
+The package makes two promises about errors, and tests can lean on both.
+
+First, [PartialsException](../reference/PartialsException.md#chameleon_partials.PartialsException) means misuse and nothing else: rendering before registration, registering an empty or non-existent folder, or handing [extend_model](../reference/extend_model.md#chameleon_partials.extend_model) something that is not a dictionary. Second, everything Chameleon raises passes through untouched. A missing template is Chameleon's `ValueError`, not a [PartialsException](../reference/PartialsException.md#chameleon_partials.PartialsException), so code that already catches Chameleon's errors keeps working when it starts rendering through partials:
 
 ``` python
 def test_missing_template(registered_extension):
@@ -54,14 +62,14 @@ def test_not_registered():
         chameleon_partials.render_partial('doesnt-matter.pt')
 ```
 
-The second test must run without the fixture, or after a fixture that has reset the flag.
+The second test is the one place the fixture must be absent. It has to run either before any fixture has registered a folder, or after one has reset the flag, which the fixture above guarantees.
 
 
 # Testing through the framework
 
-For a Pyramid app, a WebTest functional test exercises the `BeforeRender` subscriber, the layout, and the partials together. The example app in the repository does this in `example/tests/test_functional.py`. Nothing in the package needs mocking; register the real template folder in the app factory as production code does.
+Unit tests on fragments catch most things, but they will not catch a `BeforeRender` subscriber that `config.scan()` never found. For that, one functional test through the real app is worth a dozen mocks. The demo app does it with WebTest in `example/tests/test_functional.py`: fetch the home page, assert that the thumbnail markup is in the body. If that passes, the subscriber ran, the layout rendered, the page filled the slot, the loop iterated, and two levels of partials did their job. Nothing in the package needs mocking; register the real template folder in the app factory exactly as production does.
 
 
 # auto_reload in tests
 
-Passing `auto_reload=True` makes Chameleon check the file's modification time on each render and recompile when it changed. Tests that write template files on the fly need it; a suite over fixed template files does not, and the default `False` is slightly faster.
+`auto_reload=True` tells Chameleon to check a template's modification time on each render and recompile when it changed. A test that writes template files on the fly needs it. A suite over a fixed set of template files does not, and the default `False` saves a stat call per render. The fixture above turns it on, which costs nothing noticeable and means a test can edit a template mid-run if it ever needs to.

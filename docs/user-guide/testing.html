@@ -125,15 +125,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
   <link rel="alternate" type="text/markdown" href="testing.md">
   <link rel="canonical" href="https://mkennedy.codes/docs/chameleon-partials/user-guide/testing.html">
-  <meta name="description" content="Partials are plain functions over plain files, so they are easy to test without a web framework: register a folder, call render_partial, and assert on...">
+  <meta name="description" content="Template code has a reputation for being hard to test, and it is mostly earned: you need a running app, a request, a session, and a browser-shaped tool...">
   <meta property="og:type" content="website">
   <meta property="og:title" content="Testing – Chameleon Partials | Chameleon Partials">
-  <meta property="og:description" content="Partials are plain functions over plain files, so they are easy to test without a web framework: register a folder, call render_partial, and assert on...">
+  <meta property="og:description" content="Template code has a reputation for being hard to test, and it is mostly earned: you need a running app, a request, a session, and a browser-shaped tool...">
   <meta property="og:url" content="https://mkennedy.codes/docs/chameleon-partials/user-guide/testing.html">
   <meta property="og:site_name" content="Chameleon Partials">
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="Testing – Chameleon Partials | Chameleon Partials">
-  <meta name="twitter:description" content="Partials are plain functions over plain files, so they are easy to test without a web framework: register a folder, call render_partial, and assert on...">
+  <meta name="twitter:description" content="Template code has a reputation for being hard to test, and it is mostly earned: you need a running app, a request, a session, and a browser-shaped tool...">
 </head>
 
 <body class="nav-sidebar floating nav-fixed quarto-light"><a id="quarto-skip-link" class="visually-hidden-focusable" href="#quarto-document-content">Skip to main content</a>
@@ -235,9 +235,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <h2 id="toc-title">On this page</h2>
    
   <ul class="collapse">
-  <li><a href="#a-fixture-for-registration" id="toc-a-fixture-for-registration" class="nav-link active" data-scroll-target="#a-fixture-for-registration">A fixture for registration</a></li>
+  <li><a href="#the-one-shot-registration-and-the-fixture-that-tames-it" id="toc-the-one-shot-registration-and-the-fixture-that-tames-it" class="nav-link active" data-scroll-target="#the-one-shot-registration-and-the-fixture-that-tames-it">The one-shot registration, and the fixture that tames it</a></li>
   <li><a href="#asserting-on-markup" id="toc-asserting-on-markup" class="nav-link" data-scroll-target="#asserting-on-markup">Asserting on markup</a></li>
-  <li><a href="#testing-the-error-paths" id="toc-testing-the-error-paths" class="nav-link" data-scroll-target="#testing-the-error-paths">Testing the error paths</a></li>
+  <li><a href="#testing-the-promises-about-errors" id="toc-testing-the-promises-about-errors" class="nav-link" data-scroll-target="#testing-the-promises-about-errors">Testing the promises about errors</a></li>
   <li><a href="#testing-through-the-framework" id="toc-testing-through-the-framework" class="nav-link" data-scroll-target="#testing-through-the-framework">Testing through the framework</a></li>
   <li><a href="#auto_reload-in-tests" id="toc-auto_reload-in-tests" class="nav-link" data-scroll-target="#auto_reload-in-tests">auto_reload in tests</a></li>
   </ul>
@@ -265,10 +265,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<p>Partials are plain functions over plain files, so they are easy to test without a web framework: register a folder, call <a href="../reference/render_partial.html#chameleon_partials.render_partial" class="gdls-link gdls-code">render_partial</a>, and assert on the string.</p>
-<section id="a-fixture-for-registration" class="level1">
-<h1>A fixture for registration</h1>
-<p><a href="../reference/register_extensions.html#chameleon_partials.register_extensions" class="gdls-link gdls-code">register_extensions</a> keeps its state in module globals, and with the default <code>cache_init=True</code> a second call after a successful one does nothing. A test suite that registers its own template folder therefore has to either pass <code>cache_init=False</code> or reset the flag after each test, otherwise the first folder registered wins for the whole session:</p>
+<p>Template code has a reputation for being hard to test, and it is mostly earned: you need a running app, a request, a session, and a browser-shaped tool to read the result. Partials sidestep all of that. <a href="../reference/render_partial.html#chameleon_partials.render_partial" class="gdls-link gdls-code">render_partial</a> is a function that takes a path and some keyword arguments and returns a string wrapped in an object. You can call it from a test the way you would call any other function, with no web framework in sight.</p>
+<p>There is one thing to know first, and it is the reason this page exists.</p>
+<section id="the-one-shot-registration-and-the-fixture-that-tames-it" class="level1">
+<h1>The one-shot registration, and the fixture that tames it</h1>
+<p><a href="../reference/register_extensions.html#chameleon_partials.register_extensions" class="gdls-link gdls-code">register_extensions</a> keeps its state in module globals, and with the default <code>cache_init=True</code>, a second call after a successful one is a no-op. In production that is a feature. In a test suite it is a trap: the first folder anyone registers wins for the rest of the session, and a test that registers a different folder will quietly keep rendering from the old one.</p>
+<p>The fix is a fixture that registers the test folder and then clears the flag on the way out, so the next test starts clean:</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pathlib <span class="im">import</span> Path</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pytest</span>
@@ -282,19 +284,21 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>    chameleon_partials.register_extensions(folder, auto_reload<span class="op">=</span><span class="va">True</span>)</span>
 <span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>    <span class="cf">yield</span></span>
 <span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>    chameleon_partials.has_registered_extensions <span class="op">=</span> <span class="va">False</span></span></code></pre></div>
-<p>Resetting <code>has_registered_extensions</code> is enough; the next <a href="../reference/register_extensions.html#chameleon_partials.register_extensions" class="gdls-link gdls-code">register_extensions</a> call builds a fresh loader. A registration that raised, for example because the folder does not exist, does not set the flag, so a failed call can simply be retried.</p>
+<p>Resetting <code>has_registered_extensions</code> is all it takes. The next <a href="../reference/register_extensions.html#chameleon_partials.register_extensions" class="gdls-link gdls-code">register_extensions</a> call builds a fresh loader as if nothing had happened. Passing <code>cache_init=False</code> on every call works too, but the fixture keeps the knowledge in one place.</p>
+<p>A registration that raised, say because the folder does not exist, never sets the flag in the first place. That means a failed call can simply be retried once the path is fixed, and it means a typo in a fixture path fails loudly rather than leaving a half-registered module behind.</p>
 </section>
 <section id="asserting-on-markup" class="level1">
 <h1>Asserting on markup</h1>
-<p><a href="../reference/render_partial.html#chameleon_partials.render_partial" class="gdls-link gdls-code">render_partial</a> returns an <code>HTML</code> object. Read <code>html_text</code> for the rendered string and assert on it:</p>
+<p>With the fixture in place, a rendering test is three lines. Call the function, read <code>html_text</code>, look for the markup you expect:</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> test_render_with_data(registered_extension):</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>    html <span class="op">=</span> chameleon_partials.render_partial(<span class="st">'render/with_data.pt'</span>, name<span class="op">=</span><span class="st">'Sarah'</span>, age<span class="op">=</span><span class="dv">32</span>)</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> <span class="st">'&lt;span&gt;Your name is Sarah and age is 32&lt;/span&gt;'</span> <span class="kw">in</span> html.html_text</span></code></pre></div>
-<p>Nested partials need no special setup, because <a href="../reference/render_partial.html#chameleon_partials.render_partial" class="gdls-link gdls-code">render_partial</a> is injected into every partial’s model. A test that renders the outer partial covers the inner one too.</p>
+<p>Nested partials need nothing extra, because <a href="../reference/render_partial.html#chameleon_partials.render_partial" class="gdls-link gdls-code">render_partial</a> is injected into every partial’s model. A test that renders the video card has also exercised the thumbnail inside it, which is usually what you want: test the card people see, not the pieces in isolation.</p>
 </section>
-<section id="testing-the-error-paths" class="level1">
-<h1>Testing the error paths</h1>
-<p>The package promises two things about errors, and tests can rely on both. <a href="../reference/PartialsException.html#chameleon_partials.PartialsException" class="gdls-link gdls-code">PartialsException</a> is raised only for misuse: rendering before registration, registering an empty or non-existent folder, or passing a non-dictionary to <a href="../reference/extend_model.html#chameleon_partials.extend_model" class="gdls-link gdls-code">extend_model</a>. Everything Chameleon raises passes through unchanged, so a missing template is Chameleon’s <code>ValueError</code>, not <a href="../reference/PartialsException.html#chameleon_partials.PartialsException" class="gdls-link gdls-code">PartialsException</a>:</p>
+<section id="testing-the-promises-about-errors" class="level1">
+<h1>Testing the promises about errors</h1>
+<p>The package makes two promises about errors, and tests can lean on both.</p>
+<p>First, <a href="../reference/PartialsException.html#chameleon_partials.PartialsException" class="gdls-link gdls-code">PartialsException</a> means misuse and nothing else: rendering before registration, registering an empty or non-existent folder, or handing <a href="../reference/extend_model.html#chameleon_partials.extend_model" class="gdls-link gdls-code">extend_model</a> something that is not a dictionary. Second, everything Chameleon raises passes through untouched. A missing template is Chameleon’s <code>ValueError</code>, not a <a href="../reference/PartialsException.html#chameleon_partials.PartialsException" class="gdls-link gdls-code">PartialsException</a>, so code that already catches Chameleon’s errors keeps working when it starts rendering through partials:</p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> test_missing_template(registered_extension):</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">with</span> pytest.raises(<span class="pp">ValueError</span>, match<span class="op">=</span><span class="st">'Template not found'</span>):</span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>        chameleon_partials.render_partial(<span class="st">'no-way.pt'</span>)</span>
@@ -303,15 +307,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> test_not_registered():</span>
 <span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">with</span> pytest.raises(chameleon_partials.PartialsException):</span>
 <span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>        chameleon_partials.render_partial(<span class="st">'doesnt-matter.pt'</span>)</span></code></pre></div>
-<p>The second test must run without the fixture, or after a fixture that has reset the flag.</p>
+<p>The second test is the one place the fixture must be absent. It has to run either before any fixture has registered a folder, or after one has reset the flag, which the fixture above guarantees.</p>
 </section>
 <section id="testing-through-the-framework" class="level1">
 <h1>Testing through the framework</h1>
-<p>For a Pyramid app, a WebTest functional test exercises the <code>BeforeRender</code> subscriber, the layout, and the partials together. The example app in the repository does this in <code>example/tests/test_functional.py</code>. Nothing in the package needs mocking; register the real template folder in the app factory as production code does.</p>
+<p>Unit tests on fragments catch most things, but they will not catch a <code>BeforeRender</code> subscriber that <code>config.scan()</code> never found. For that, one functional test through the real app is worth a dozen mocks. The demo app does it with WebTest in <code>example/tests/test_functional.py</code>: fetch the home page, assert that the thumbnail markup is in the body. If that passes, the subscriber ran, the layout rendered, the page filled the slot, the loop iterated, and two levels of partials did their job. Nothing in the package needs mocking; register the real template folder in the app factory exactly as production does.</p>
 </section>
 <section id="auto_reload-in-tests" class="level1">
 <h1>auto_reload in tests</h1>
-<p>Passing <code>auto_reload=True</code> makes Chameleon check the file’s modification time on each render and recompile when it changed. Tests that write template files on the fly need it; a suite over fixed template files does not, and the default <code>False</code> is slightly faster.</p>
+<p><code>auto_reload=True</code> tells Chameleon to check a template’s modification time on each render and recompile when it changed. A test that writes template files on the fly needs it. A suite over a fixed set of template files does not, and the default <code>False</code> saves a stat call per render. The fixture above turns it on, which costs nothing noticeable and means a test can edit a template mid-run if it ever needs to.</p>
 
 
 </section>

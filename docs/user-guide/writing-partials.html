@@ -125,15 +125,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
   <link rel="alternate" type="text/markdown" href="writing-partials.md">
   <link rel="canonical" href="https://mkennedy.codes/docs/chameleon-partials/user-guide/writing-partials.html">
-  <meta name="description" content="A partial is a Chameleon template rendered by render_partial. This page covers the rules that are not obvious from the call itself: how the name...">
+  <meta name="description" content="Once the thumbnail renders, the temptation is to turn every repeated block in the app into a partial on the same afternoon. Go ahead, but read this...">
   <meta property="og:type" content="website">
   <meta property="og:title" content="Writing partials – Chameleon Partials | Chameleon Partials">
-  <meta property="og:description" content="A partial is a Chameleon template rendered by render_partial. This page covers the rules that are not obvious from the call itself: how the name...">
+  <meta property="og:description" content="Once the thumbnail renders, the temptation is to turn every repeated block in the app into a partial on the same afternoon. Go ahead, but read this...">
   <meta property="og:url" content="https://mkennedy.codes/docs/chameleon-partials/user-guide/writing-partials.html">
   <meta property="og:site_name" content="Chameleon Partials">
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="Writing partials – Chameleon Partials | Chameleon Partials">
-  <meta name="twitter:description" content="A partial is a Chameleon template rendered by render_partial. This page covers the rules that are not obvious from the call itself: how the name...">
+  <meta name="twitter:description" content="Once the thumbnail renders, the temptation is to turn every repeated block in the app into a partial on the same afternoon. Go ahead, but read this...">
 </head>
 
 <body class="nav-sidebar floating nav-fixed quarto-light"><a id="quarto-skip-link" class="visually-hidden-focusable" href="#quarto-document-content">Skip to main content</a>
@@ -235,13 +235,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <h2 id="toc-title">On this page</h2>
    
   <ul class="collapse">
-  <li><a href="#paths-are-relative-to-the-registered-folder" id="toc-paths-are-relative-to-the-registered-folder" class="nav-link active" data-scroll-target="#paths-are-relative-to-the-registered-folder">Paths are relative to the registered folder</a></li>
-  <li><a href="#the-model-is-the-keyword-arguments" id="toc-the-model-is-the-keyword-arguments" class="nav-link" data-scroll-target="#the-model-is-the-keyword-arguments">The model is the keyword arguments</a></li>
-  <li><a href="#nesting" id="toc-nesting" class="nav-link" data-scroll-target="#nesting">Nesting</a></li>
+  <li><a href="#rule-one-paths-are-relative-to-the-registered-folder" id="toc-rule-one-paths-are-relative-to-the-registered-folder" class="nav-link active" data-scroll-target="#rule-one-paths-are-relative-to-the-registered-folder">Rule one: paths are relative to the registered folder</a></li>
+  <li><a href="#rule-two-the-model-is-exactly-what-you-pass" id="toc-rule-two-the-model-is-exactly-what-you-pass" class="nav-link" data-scroll-target="#rule-two-the-model-is-exactly-what-you-pass">Rule two: the model is exactly what you pass</a></li>
+  <li><a href="#fragments-all-the-way-down" id="toc-fragments-all-the-way-down" class="nav-link" data-scroll-target="#fragments-all-the-way-down">Fragments all the way down</a></li>
   <li><a href="#loops" id="toc-loops" class="nav-link" data-scroll-target="#loops">Loops</a></li>
   <li><a href="#layouts" id="toc-layouts" class="nav-link" data-scroll-target="#layouts">Layouts</a></li>
   <li><a href="#rendering-a-fragment-from-python" id="toc-rendering-a-fragment-from-python" class="nav-link" data-scroll-target="#rendering-a-fragment-from-python">Rendering a fragment from Python</a></li>
-  <li><a href="#choosing-partials-safely" id="toc-choosing-partials-safely" class="nav-link" data-scroll-target="#choosing-partials-safely">Choosing partials safely</a></li>
+  <li><a href="#never-let-the-request-choose-the-file" id="toc-never-let-the-request-choose-the-file" class="nav-link" data-scroll-target="#never-let-the-request-choose-the-file">Never let the request choose the file</a></li>
   <li><a href="#a-layout-for-the-templates-folder" id="toc-a-layout-for-the-templates-folder" class="nav-link" data-scroll-target="#a-layout-for-the-templates-folder">A layout for the templates folder</a></li>
   </ul>
 </nav>
@@ -268,10 +268,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<p>A partial is a Chameleon template rendered by <a href="../reference/render_partial.html#chameleon_partials.render_partial" class="gdls-link gdls-code">render_partial</a>. This page covers the rules that are not obvious from the call itself: how the name resolves, how the model gets in, how partials nest, and how they fit with METAL layouts.</p>
-<section id="paths-are-relative-to-the-registered-folder" class="level1">
-<h1>Paths are relative to the registered folder</h1>
-<p>The first argument to <a href="../reference/render_partial.html#chameleon_partials.render_partial" class="gdls-link gdls-code">render_partial</a> is a path relative to the folder you passed to <a href="../reference/register_extensions.html#chameleon_partials.register_extensions" class="gdls-link gdls-code">register_extensions</a>. It is never relative to the template making the call, even when that template is itself a partial in a subfolder. A partial in <code>shared/partials/</code> that wants a sibling still writes the full path:</p>
+<p>Once the thumbnail renders, the temptation is to turn every repeated block in the app into a partial on the same afternoon. Go ahead, but read this page first. It is the rulebook, and most of the rules exist because someone, usually the author, got them wrong once.</p>
+<section id="rule-one-paths-are-relative-to-the-registered-folder" class="level1">
+<h1>Rule one: paths are relative to the registered folder</h1>
+<p>This is the rule everyone trips on, so it goes first. The first argument to <a href="../reference/render_partial.html#chameleon_partials.render_partial" class="gdls-link gdls-code">render_partial</a> is a path relative to the folder you gave <a href="../reference/register_extensions.html#chameleon_partials.register_extensions" class="gdls-link gdls-code">register_extensions</a>. It is never relative to the template making the call, even when that template is itself a partial sitting in a subfolder.</p>
+<p>Here is the full video card from the demo app. It lives in <code>shared/partials/</code> and it wants the thumbnail that lives right next to it. It still spells out the whole path:</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode html"><code class="sourceCode html"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co">&lt;!-- templates/shared/partials/video_square.pt --&gt;</span></span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;</span><span class="kw">div</span><span class="dt">&gt;</span></span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&lt;</span><span class="kw">a</span><span class="ot"> href</span><span class="op">=</span><span class="st">"https://www.youtube.com/watch?v=${ video.id }"</span><span class="ot"> target</span><span class="op">=</span><span class="st">"_blank"</span><span class="dt">&gt;</span></span>
@@ -281,30 +282,32 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="ot">       class</span><span class="op">=</span><span class="st">"author"</span><span class="dt">&gt;</span>${ video.author }<span class="dt">&lt;/</span><span class="kw">a</span><span class="dt">&gt;</span></span>
 <span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&lt;</span><span class="kw">div</span><span class="ot"> class</span><span class="op">=</span><span class="st">"views"</span><span class="dt">&gt;</span>${ "{:,}".format(video.views) } views<span class="dt">&lt;/</span><span class="kw">div</span><span class="dt">&gt;</span></span>
 <span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;/</span><span class="kw">div</span><span class="dt">&gt;</span></span></code></pre></div>
-<p>This differs from Chameleon’s own <code>metal:use-macro="load: ../shared/_layout.pt"</code>, where the path is relative to the current template file. Keep the two rules apart: <code>load:</code> is relative to the file, <a href="../reference/render_partial.html#chameleon_partials.render_partial" class="gdls-link gdls-code">render_partial</a> is relative to the folder.</p>
-<p>The name must point at a regular file inside the registered folder. An absolute path, a <code>..</code> that leaves the folder, a <code>package:path</code> spec, or a folder name is reported as a missing template, with Chameleon’s own <code>ValueError</code> (<code>Template not found: ...</code>). A <code>..</code> that stays inside the folder is fine. Surrounding whitespace and redundant <code>./</code> or <code>//</code> segments are normalized away, so every spelling of a file compiles and caches one template. On macOS and Windows, a differently cased spelling still loads but caches separately, so pick one spelling.</p>
+<p>The reason it trips people is that Chameleon itself uses the other convention. A layout is pulled in with <code>metal:use-macro="load: ../shared/_layout.pt"</code>, and that <code>load:</code> path is relative to the current template file. So in one <code>.pt</code> file you may have both kinds of path side by side. The rule of thumb: <code>load:</code> thinks like a file, <a href="../reference/render_partial.html#chameleon_partials.render_partial" class="gdls-link gdls-code">render_partial</a> thinks like the folder.</p>
+<p>There is a second half to this rule. The name has to point at a regular file inside the registered folder. An absolute path, a <code>..</code> that climbs out of the folder, a <code>package:path</code> spec, or a bare folder name is reported as a missing template, with Chameleon’s own <code>ValueError</code> reading <code>Template not found: ...</code>. A <code>..</code> that stays inside the folder is fine. Surrounding whitespace and redundant <code>./</code> or <code>//</code> segments are normalised away, so every spelling of a file compiles and caches as one template. On macOS and Windows a differently cased spelling will still load, but it caches as a second template, so pick one spelling and stick to it.</p>
 </section>
-<section id="the-model-is-the-keyword-arguments" class="level1">
-<h1>The model is the keyword arguments</h1>
-<p>Everything after the path is passed to the fragment as its model. Any Python object works, and the template uses it through ordinary Chameleon expressions:</p>
+<section id="rule-two-the-model-is-exactly-what-you-pass" class="level1">
+<h1>Rule two: the model is exactly what you pass</h1>
+<p>Everything after the path becomes the fragment’s model. Any Python object is welcome, and the template reaches into it with ordinary Chameleon expressions:</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode html"><code class="sourceCode html"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>${ render_partial('shared/partials/user_card.pt', user=user, show_email=False) }</span></code></pre></div>
-<p>A name the template references but the call does not pass raises Chameleon’s <code>NameError</code> at render time. There are no defaults, so pass every name the partial uses, or give the partial a <code>tal:define</code> with a fallback.</p>
-<p>Three names are not yours to use. <code>encoding</code> is reserved because <a href="../reference/render_partial.html#chameleon_partials.render_partial" class="gdls-link gdls-code">render_partial</a> passes <code>encoding='utf-8'</code> to Chameleon itself, and supplying it raises <code>TypeError</code>. <code>translate</code> and <code>target_language</code> have special meaning to Chameleon’s i18n support, and <code>repeat</code> is the name of Chameleon’s loop-state object, so a value under any of those names will not reach your template the way you expect.</p>
+<p>What you do not pass, the partial does not have. A name the template references but the call left out raises Chameleon’s <code>NameError</code> at render time, with the expression and line number in the message. There are no defaults on the call side, so either pass every name the partial uses or give the partial its own fallback with <code>tal:define</code>.</p>
+<p>Four names in the model are already spoken for. <code>encoding</code> belongs to the package, which passes <code>encoding='utf-8'</code> into Chameleon on every render; supply your own and Python raises <code>TypeError</code> for the duplicate keyword. <code>translate</code> and <code>target_language</code> are Chameleon’s i18n hooks, and <code>repeat</code> is the name of Chameleon’s loop-state object. A value under any of those names will not reach your template the way you expect, so call it something else.</p>
 </section>
-<section id="nesting" class="level1">
-<h1>Nesting</h1>
-<p>Every partial automatically receives <a href="../reference/render_partial.html#chameleon_partials.render_partial" class="gdls-link gdls-code">render_partial</a> in its model, so a partial can render other partials with no extra wiring. The <code>video_square.pt</code> fragment above does this with <code>video_image.pt</code>. Nesting depth is not limited by the package. A partial that includes itself without a stopping condition raises Python’s <code>RecursionError</code>.</p>
+<section id="fragments-all-the-way-down" class="level1">
+<h1>Fragments all the way down</h1>
+<p>Every partial automatically receives <a href="../reference/render_partial.html#chameleon_partials.render_partial" class="gdls-link gdls-code">render_partial</a> in its model, so a partial can render other partials with no extra wiring. The video card above does exactly that with the thumbnail, and the thumbnail could do it again if it had anything smaller to delegate to. The package puts no limit on the depth.</p>
+<p>The one thing it cannot save you from is a partial that renders itself without a way to stop. That ends, as recursion in Python always does, with <code>RecursionError</code>. If a fragment genuinely needs to recurse, say for a comment thread, wrap the inner call in a <code>tal:condition</code> that checks a depth or a children list.</p>
 </section>
 <section id="loops" class="level1">
 <h1>Loops</h1>
-<p>Call <a href="../reference/render_partial.html#chameleon_partials.render_partial" class="gdls-link gdls-code">render_partial</a> inside a <code>tal:repeat</code> to render a fragment per item. The loop variable in the outer template can be renamed to whatever the partial expects:</p>
+<p>Put the call inside a <code>tal:repeat</code> and you get one fragment per item. The loop variable in the outer template can be named whatever reads well there, and renamed to whatever the partial expects on the way in:</p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode html"><code class="sourceCode html"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;</span><span class="kw">span</span><span class="ot"> class</span><span class="op">=</span><span class="st">"video"</span><span class="ot"> tal:repeat</span><span class="op">=</span><span class="st">"v videos"</span><span class="dt">&gt;</span></span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    ${ render_partial('shared/partials/video_square.pt', video=v) }</span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;/</span><span class="kw">span</span><span class="dt">&gt;</span></span></code></pre></div>
+<p>This is the listing page of the demo app in its entirety, give or take a heading. Each <code>v</code> becomes <code>video</code> inside the card, the card renders the thumbnail, and the page is done.</p>
 </section>
 <section id="layouts" class="level1">
 <h1>Layouts</h1>
-<p>Partials compose with METAL layout inheritance. A page fills a layout’s slot and renders partials inside the slot. The layout itself is an ordinary Chameleon template; by convention it starts with an underscore so it is easy to tell apart from pages and partials:</p>
+<p>Partials and METAL layouts are made for different jobs and they get along well. A layout is the stage: the <code>&lt;html&gt;</code> skeleton, the navigation, the footer, with a slot where the page goes. Partials are the props. A page fills the slot and renders partials inside it:</p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode html"><code class="sourceCode html"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co">&lt;!-- templates/shared/_layout.pt --&gt;</span></span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;!DOCTYPE</span> html metal:define-macro=<span class="st">"layout"</span><span class="dt">&gt;</span></span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;</span><span class="kw">html</span><span class="ot"> lang</span><span class="op">=</span><span class="st">"en"</span><span class="dt">&gt;</span></span>
@@ -320,27 +323,29 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>        <span class="dt">&lt;/</span><span class="kw">div</span><span class="dt">&gt;</span></span>
 <span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&lt;/</span><span class="kw">div</span><span class="dt">&gt;</span></span>
 <span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;/</span><span class="kw">div</span><span class="dt">&gt;</span></span></code></pre></div>
-<p>A partial can use a layout too, since it is just a template, but a fragment meant to be inserted into a page normally should not.</p>
+<p>The underscore on <code>_layout.pt</code> is a convention, not a requirement. It makes the one file that is never rendered directly stand out in a folder listing. Note the two path styles in <code>index.pt</code>, right next to each other: <code>load:</code> climbing up a directory, <a href="../reference/render_partial.html#chameleon_partials.render_partial" class="gdls-link gdls-code">render_partial</a> starting from the root.</p>
+<p>A partial can use a layout too, because it is just a template. A fragment meant to be dropped into the middle of a page normally should not, since the page already has one.</p>
 </section>
 <section id="rendering-a-fragment-from-python" class="level1">
 <h1>Rendering a fragment from Python</h1>
-<p><a href="../reference/render_partial.html#chameleon_partials.render_partial" class="gdls-link gdls-code">render_partial</a> is a normal Python function, so a view can call it directly. This is how to return just a fragment for an HTMX request, build the body of an email, or assert on markup in a test. The return value is an <code>HTML</code> object; read its <code>html_text</code> attribute for the string:</p>
+<p><a href="../reference/render_partial.html#chameleon_partials.render_partial" class="gdls-link gdls-code">render_partial</a> is an ordinary Python function, and that opens a door. A view can call it directly to return just a card for an HTMX request, to build the body of an email, or to check markup in a test. The return value is the <code>HTML</code> wrapper; its <code>html_text</code> attribute is the string:</p>
 <div class="sourceCode" id="cb6"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> chameleon_partials</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>fragment <span class="op">=</span> chameleon_partials.render_partial(<span class="st">'shared/partials/video_square.pt'</span>, video<span class="op">=</span>video)</span>
 <span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="cf">return</span> Response(fragment.html_text)</span></code></pre></div>
-<p>Pass the <code>HTML</code> object itself, not <code>html_text</code>, when the value goes back into another template. Chameleon escapes a plain string and inserts an <code>HTML</code> object as is.</p>
+<p>The direction matters. Going out to the wire, you want the string, so read <code>html_text</code>. Going back into another template, pass the <code>HTML</code> object itself. Chameleon escapes a plain string and inserts an <code>HTML</code> object verbatim, and the <a href="../user-guide/troubleshooting.html">Troubleshooting</a> page has an entry for what it looks like when you mix those up.</p>
 </section>
-<section id="choosing-partials-safely" class="level1">
-<h1>Choosing partials safely</h1>
-<p>Choose the partial in your code, never from request data. The containment check above stops a name from reaching outside the template folder, but a request that picks the fragment should still be mapped to a name you wrote rather than used to build the path:</p>
+<section id="never-let-the-request-choose-the-file" class="level1">
+<h1>Never let the request choose the file</h1>
+<p>It is tempting, once fragments are cheap, to let a query parameter pick which one to render: <code>?style=card</code> or <code>?style=row</code>. Do it, but do it with a lookup table, never by building the path from the parameter:</p>
 <div class="sourceCode" id="cb7"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>PARTIALS <span class="op">=</span> {<span class="st">'card'</span>: <span class="st">'shared/partials/video_square.pt'</span>, <span class="st">'row'</span>: <span class="st">'shared/partials/video_row.pt'</span>}</span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>html <span class="op">=</span> render_partial(PARTIALS[request.params[<span class="st">'style'</span>]], video<span class="op">=</span>video)</span></code></pre></div>
-<p>Pass the model as named keyword arguments too. Spreading a request’s parameters into the call (<code>render_partial(name, **request.params)</code>) lets a parameter replace a name the template relies on. <a href="../reference/render_partial.html#chameleon_partials.render_partial" class="gdls-link gdls-code">render_partial</a> is only injected into the model when the key is absent, so a request parameter named <a href="../reference/render_partial.html#chameleon_partials.render_partial" class="gdls-link gdls-code">render_partial</a> would take its place.</p>
+<p>The containment check from rule one will refuse a name that climbs out of the templates folder, and that check is a safety net, not a design. A table of names you wrote means the request can choose between two fragments and nothing else.</p>
+<p>The same caution applies to the model. Spreading a request’s parameters straight into the call, as in <code>render_partial(name, **request.params)</code>, lets anyone who can type a URL set any name the template relies on. <a href="../reference/render_partial.html#chameleon_partials.render_partial" class="gdls-link gdls-code">render_partial</a> is only injected into the model when the key is absent, so a parameter literally called <a href="../reference/render_partial.html#chameleon_partials.render_partial" class="gdls-link gdls-code">render_partial</a> would take its place. Pass named keyword arguments and the request stays on the outside.</p>
 </section>
 <section id="a-layout-for-the-templates-folder" class="level1">
 <h1>A layout for the templates folder</h1>
-<p>The package does not require any particular layout, but this one keeps pages, layouts, and partials apart and matches the example app:</p>
+<p>The package has no opinion about folder structure, but the demo app’s structure has held up well. Pages grouped by area, one layout, and all the fragments in one place where you can find them:</p>
 <pre class="text"><code>templates/
 ├── errors/
 │   └── 404.pt

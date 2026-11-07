@@ -124,15 +124,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
   <link rel="alternate" type="text/markdown" href="index.md">
   <link rel="canonical" href="https://mkennedy.codes/docs/chameleon-partials/user-guide/">
-  <meta name="description" content="Chameleon templates have no built-in way to reuse a small fragment of HTML across pages. chameleon_partials adds one function, render_partial, that a...">
+  <meta name="description" content="Every web app has a piece of HTML it cannot stop repeating. In the demo app that ships with this library it is a video card: a YouTube thumbnail, the...">
   <meta property="og:type" content="website">
   <meta property="og:title" content="User Guide – Chameleon Partials | Chameleon Partials">
-  <meta property="og:description" content="Chameleon templates have no built-in way to reuse a small fragment of HTML across pages. chameleon_partials adds one function, render_partial, that a...">
+  <meta property="og:description" content="Every web app has a piece of HTML it cannot stop repeating. In the demo app that ships with this library it is a video card: a YouTube thumbnail, the...">
   <meta property="og:url" content="https://mkennedy.codes/docs/chameleon-partials/user-guide/">
   <meta property="og:site_name" content="Chameleon Partials">
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="User Guide – Chameleon Partials | Chameleon Partials">
-  <meta name="twitter:description" content="Chameleon templates have no built-in way to reuse a small fragment of HTML across pages. chameleon_partials adds one function, render_partial, that a...">
+  <meta name="twitter:description" content="Every web app has a piece of HTML it cannot stop repeating. In the demo app that ships with this library it is a video card: a YouTube thumbnail, the...">
 </head>
 
 <body class="nav-sidebar floating nav-fixed quarto-light"><a id="quarto-skip-link" class="visually-hidden-focusable" href="#quarto-document-content">Skip to main content</a>
@@ -260,21 +260,23 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<p>Chameleon templates have no built-in way to reuse a small fragment of HTML across pages. chameleon_partials adds one function, <a href="../reference/render_partial.html#chameleon_partials.render_partial" class="gdls-link gdls-code">render_partial</a>, that a template calls to insert a fragment and pass it a model:</p>
+<p>Every web app has a piece of HTML it cannot stop repeating. In the demo app that ships with this library it is a video card: a YouTube thumbnail, the channel name, and a view count. The card appears on the home page in a row of three. It appears again on the listing page, dozens of times. The first time you build it you copy the markup from one template into the other and move on, because that is what Tuesday afternoons are for.</p>
+<p>Then the view count needs a thousands separator. You fix it on the home page, ship it, and a week later someone sends a screenshot of the listing page still showing <code>10302 views</code>. Now there are two cards, and they will keep drifting apart for as long as the app lives.</p>
+<p>Chameleon has no built-in answer to this. It has macros, which are good at layouts and clumsy at small reusable pieces with their own data. chameleon_partials adds one function, <a href="../reference/render_partial.html#chameleon_partials.render_partial" class="gdls-link gdls-code">render_partial</a>, that a template calls to drop a fragment in place and hand it a model:</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode html"><code class="sourceCode html"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;</span><span class="kw">span</span><span class="ot"> class</span><span class="op">=</span><span class="st">"video"</span><span class="ot"> tal:repeat</span><span class="op">=</span><span class="st">"v videos"</span><span class="dt">&gt;</span></span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    ${ render_partial('shared/partials/video_square.pt', video=v) }</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;/</span><span class="kw">span</span><span class="dt">&gt;</span></span></code></pre></div>
-<p>The fragment is an ordinary Chameleon template that lives under the folder you register once at startup. It receives the keyword arguments as its model, it can call <a href="../reference/render_partial.html#chameleon_partials.render_partial" class="gdls-link gdls-code">render_partial</a> itself to nest further fragments, and the markup it produces is inserted unescaped.</p>
+<p>The fragment is an ordinary Chameleon template living under a folder you register once at startup. It gets the keyword arguments as its model, it can call <a href="../reference/render_partial.html#chameleon_partials.render_partial" class="gdls-link gdls-code">render_partial</a> itself to pull in smaller fragments, and the markup it produces is inserted unescaped, so the page sees HTML rather than a string of angle brackets. The video card becomes one file, and the thousands separator gets fixed once.</p>
 <section id="where-to-go-next" class="level1">
 <h1>Where to go next</h1>
 <ul>
-<li><a href="../user-guide/getting-started.html">Getting started</a>: install the package, register the template folder, make <a href="../reference/render_partial.html#chameleon_partials.render_partial" class="gdls-link gdls-code">render_partial</a> available to your templates, and render a first fragment.</li>
-<li><a href="../user-guide/writing-partials.html">Writing partials</a>: how paths resolve, passing a model, nesting, loops, METAL layouts, rendering a fragment from Python, and choosing partials safely.</li>
-<li><a href="../user-guide/testing.html">Testing</a>: a pytest fixture for the one-time registration, asserting on rendered markup, and what the error types promise.</li>
-<li><a href="../user-guide/troubleshooting.html">Troubleshooting</a>: every error the package or Chameleon raises in normal use, what causes it, and how to fix it.</li>
-<li><a href="../reference/index.html">API reference</a>: the four public names with their full docstrings.</li>
+<li><a href="../user-guide/getting-started.html">Getting started</a> takes an app from <code>pip install</code> to its first rendered fragment in four moves: install, register the folder, hand <a href="../reference/render_partial.html#chameleon_partials.render_partial" class="gdls-link gdls-code">render_partial</a> to your templates, and call it.</li>
+<li><a href="../user-guide/writing-partials.html">Writing partials</a> is the rulebook. How a partial’s path resolves (this is the one rule everyone trips on), how the model gets in, nesting, loops, METAL layouts, rendering a fragment straight from Python for HTMX, and why the request must never choose the file.</li>
+<li><a href="../user-guide/testing.html">Testing</a> shows that partials are plain functions over plain files, which makes them pleasant to test, as long as you know about the one-shot registration.</li>
+<li><a href="../user-guide/troubleshooting.html">Troubleshooting</a> is a field guide to every error the package or Chameleon raises in normal use. Each heading is the message you will see, so you can search for it.</li>
+<li><a href="../reference/index.html">API reference</a> holds the four public names with their full docstrings.</li>
 </ul>
-<p>The <a href="https://github.com/mikeckennedy/chameleon_partials/tree/main/example">example Pyramid app</a> in the repository shows all of this working together: the <code>BeforeRender</code> subscriber, nested partials inside <code>tal:repeat</code> loops, and METAL layout inheritance.</p>
+<p>The <a href="https://github.com/mikeckennedy/chameleon_partials/tree/main/example">example Pyramid app</a> in the repository is the video site described above, and it is the source of every snippet in this guide: a <code>BeforeRender</code> subscriber, nested partials inside <code>tal:repeat</code> loops, and METAL layout inheritance, all working together in about a dozen files.</p>
 
 
 </section>

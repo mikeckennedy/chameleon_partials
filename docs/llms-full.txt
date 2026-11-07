@@ -157,7 +157,11 @@ This is the User Guide documentation for the package.
 
 ### User Guide
 
-Chameleon templates have no built-in way to reuse a small fragment of HTML across pages. chameleon_partials adds one function, `render_partial`, that a template calls to insert a fragment and pass it a model:
+Every web app has a piece of HTML it cannot stop repeating. In the demo app that ships with this library it is a video card: a YouTube thumbnail, the channel name, and a view count. The card appears on the home page in a row of three. It appears again on the listing page, dozens of times. The first time you build it you copy the markup from one template into the other and move on, because that is what Tuesday afternoons are for.
+
+Then the view count needs a thousands separator. You fix it on the home page, ship it, and a week later someone sends a screenshot of the listing page still showing `10302 views`. Now there are two cards, and they will keep drifting apart for as long as the app lives.
+
+Chameleon has no built-in answer to this. It has macros, which are good at layouts and clumsy at small reusable pieces with their own data. chameleon_partials adds one function, `render_partial`, that a template calls to drop a fragment in place and hand it a model:
 
 ```html
 <span class="video" tal:repeat="v videos">
@@ -165,24 +169,24 @@ Chameleon templates have no built-in way to reuse a small fragment of HTML acros
 </span>
 ```
 
-The fragment is an ordinary Chameleon template that lives under the folder you register once at startup. It receives the keyword arguments as its model, it can call `render_partial` itself to nest further fragments, and the markup it produces is inserted unescaped.
+The fragment is an ordinary Chameleon template living under a folder you register once at startup. It gets the keyword arguments as its model, it can call `render_partial` itself to pull in smaller fragments, and the markup it produces is inserted unescaped, so the page sees HTML rather than a string of angle brackets. The video card becomes one file, and the thousands separator gets fixed once.
 
 ## Where to go next
 
-- [Getting started](getting-started.qmd): install the package, register the template folder, make `render_partial` available to your templates, and render a first fragment.
-- [Writing partials](writing-partials.qmd): how paths resolve, passing a model, nesting, loops, METAL layouts, rendering a fragment from Python, and choosing partials safely.
-- [Testing](testing.qmd): a pytest fixture for the one-time registration, asserting on rendered markup, and what the error types promise.
-- [Troubleshooting](troubleshooting.qmd): every error the package or Chameleon raises in normal use, what causes it, and how to fix it.
-- [API reference](../reference/index.qmd): the four public names with their full docstrings.
+- [Getting started](getting-started.qmd) takes an app from `pip install` to its first rendered fragment in four moves: install, register the folder, hand `render_partial` to your templates, and call it.
+- [Writing partials](writing-partials.qmd) is the rulebook. How a partial's path resolves (this is the one rule everyone trips on), how the model gets in, nesting, loops, METAL layouts, rendering a fragment straight from Python for HTMX, and why the request must never choose the file.
+- [Testing](testing.qmd) shows that partials are plain functions over plain files, which makes them pleasant to test, as long as you know about the one-shot registration.
+- [Troubleshooting](troubleshooting.qmd) is a field guide to every error the package or Chameleon raises in normal use. Each heading is the message you will see, so you can search for it.
+- [API reference](../reference/index.qmd) holds the four public names with their full docstrings.
 
-The [example Pyramid app](https://github.com/mikeckennedy/chameleon_partials/tree/main/example) in the repository shows all of this working together: the `BeforeRender` subscriber, nested partials inside `tal:repeat` loops, and METAL layout inheritance.
+The [example Pyramid app](https://github.com/mikeckennedy/chameleon_partials/tree/main/example) in the repository is the video site described above, and it is the source of every snippet in this guide: a `BeforeRender` subscriber, nested partials inside `tal:repeat` loops, and METAL layout inheritance, all working together in about a dozen files.
 
 
 ### Getting started
 
-This page takes you from an empty project to a rendered fragment. It assumes a web framework that already renders Chameleon templates, such as Pyramid with `pyramid_chameleon`, or FastAPI with Chameleon called directly.
+This page takes an app from nothing to a rendered fragment in four moves. It assumes a framework that already renders Chameleon templates, such as Pyramid with `pyramid_chameleon`, or FastAPI calling Chameleon directly. The snippets come from the demo video site, so the fragment we build is the YouTube thumbnail that every video card shares.
 
-## Install
+## Move one: install
 
 ```bash
 uv add chameleon-partials
@@ -190,11 +194,11 @@ uv add chameleon-partials
 pip install chameleon-partials
 ```
 
-The distribution name on PyPI is `chameleon-partials` with a hyphen. The import name is `chameleon_partials` with an underscore. The only runtime dependency is Chameleon.
+Two spellings, and both matter. The distribution on PyPI is `chameleon-partials` with a hyphen. The module you import is `chameleon_partials` with an underscore. The package is pure Python and its only runtime dependency is Chameleon itself.
 
-## Register the template folder once
+## Move two: tell the library where the templates live
 
-Call `register_extensions` once at application startup, before any template renders. It takes the root folder of your Chameleon templates. Every partial is later named by its path relative to this folder.
+The library needs to know one thing before it can do anything: the root folder of your Chameleon templates. Tell it once, at startup, before any template renders:
 
 ```python
 from pathlib import Path
@@ -205,17 +209,19 @@ folder = (Path(__file__).parent / 'templates').as_posix()
 chameleon_partials.register_extensions(folder, auto_reload=True)
 ```
 
-Build the folder path from `__file__` so it does not depend on the working directory. Set `auto_reload=True` while developing so edits to a template show up without a restart, and leave it at the default `False` in production.
+Build the path from `__file__` rather than a relative string, so it works no matter which directory the process was launched from. Every partial you render later is named by its path relative to this folder, which is why this is the only place the folder ever appears.
 
-In a Pyramid app this call goes in the `main` function that builds the WSGI app. In a FastAPI app it goes at module level next to the app object or in the lifespan startup. Registration is process-wide module state, so call it from single-threaded startup code, not from a request handler.
+`auto_reload=True` makes Chameleon check a template's modification time on each render and recompile when it changed, so you can edit a fragment and refresh the browser. It costs a stat call per render, so leave it at the default `False` in production and restart on deploy.
 
-Calling it a second time after a successful registration does nothing. That is intended, so repeated startup calls are safe. See [Testing](testing.qmd) for how to point at a different folder.
+In a Pyramid app this call belongs in the `main` function that builds the WSGI app. In FastAPI it goes at module level beside the app object, or in the lifespan startup. The registration is process-wide module state, so it wants single-threaded startup code, not a request handler.
 
-## Make render_partial available to templates
+One more thing worth knowing now rather than later: once a call to `register_extensions` has succeeded, calling it again does nothing. That is on purpose, so an app that initialises twice does not rebuild its loader, and it is exactly the behaviour a test suite needs to know about. [Testing](testing.qmd) covers how to point tests at their own folder.
 
-A template can only call `render_partial` if the name is in its model. Wire that once, in whichever way your framework supports.
+## Move three: open the door for your templates
 
-In Pyramid, add a `BeforeRender` subscriber. Drop this file into your `views` package so `config.scan()` picks it up, and every template gets `render_partial` with no change to the views:
+A template can only call `render_partial` if that name is in its model. Chameleon has no global namespace to drop it into, so you wire it once in whatever way your framework offers.
+
+Pyramid has the nicest answer. A `BeforeRender` subscriber runs before every template render and can add names to the model. Put this file inside the package that `config.scan()` covers and forget about it:
 
 ```python
 # views/partials_middleware.py
@@ -229,18 +235,20 @@ def add_global(event):
     event['render_partial'] = chameleon_partials.render_partial
 ```
 
-In any other framework, extend the model dictionary before you hand it to the template:
+Every view in the app now returns its model exactly as before, and every template can call `render_partial`.
+
+Elsewhere, extend the model dictionary on its way out of the view:
 
 ```python
 model = {'videos': videos}
 return chameleon_partials.extend_model(model)
 ```
 
-`extend_model` adds the `render_partial` key to the dictionary you pass and returns the same dictionary. It accepts `None` and returns a new dictionary in that case.
+`extend_model` adds the `render_partial` key to the dictionary you give it and returns that same dictionary. Hand it `None` and you get a fresh dictionary back.
 
-## Write a partial
+## Move four: write a fragment and render it
 
-A partial is a plain Chameleon template holding a fragment of HTML. It does not need a layout, a `<html>` element, or a `metal:define-macro`. Keep partials together under a folder such as `shared/partials/` so they are easy to find:
+A partial is a plain Chameleon template holding a piece of HTML. No layout, no `<html>` element, no `metal:define-macro`. Here is the thumbnail, as it lives in the demo app:
 
 ```html
 <!-- templates/shared/partials/video_image.pt -->
@@ -250,11 +258,9 @@ A partial is a plain Chameleon template holding a fragment of HTML. It does not 
      title="${ video.title }">
 ```
 
-The template references `video` and `classes`. Those names come from the keyword arguments of the `render_partial` call that renders it.
+It uses two names, `video` and `classes`. Nothing in the file says where those come from, and that is the point: they come from whoever renders it. A folder named `shared/partials/` is only a convention, but it is a good one, because six months from now you will want to know which `.pt` files are pages and which are pieces.
 
-## Render it
-
-From any page template, or from another partial, call `render_partial` inside a `${ }` expression. The first argument is the path relative to the registered folder. The keyword arguments become the fragment's model:
+Now render it. From a page template, or from inside another partial, call `render_partial` in a `${ }` expression. The first argument is the path relative to the registered folder, and the keyword arguments are the fragment's model:
 
 ```html
 <a href="https://www.youtube.com/watch?v=${ video.id }" target="_blank">
@@ -262,18 +268,20 @@ From any page template, or from another partial, call `render_partial` inside a 
 </a>
 ```
 
-`render_partial` returns an `HTML` object rather than a string. Chameleon sees its `__html__` method and inserts the markup as is, without escaping it. A plain string in the same position would be escaped.
+Reload the page and the thumbnail is there. Behind the scenes `render_partial` looked the file up in the registered folder, rendered it with `video` and `classes` in scope, and returned an `HTML` object rather than a string. Chameleon notices the object's `__html__` method and inserts the markup as is. Had the function returned a plain string, Chameleon would have escaped it and you would be looking at a literal `<img` on the page. That small wrapper is what makes the whole thing feel native.
 
-That is the whole mechanism. [Writing partials](writing-partials.qmd) covers nesting, loops, layouts, and the rules a partial name has to follow.
+Those four moves are the entire library. Everything else is the rulebook, and [Writing partials](writing-partials.qmd) is where it lives.
 
 
 ### Writing partials
 
-A partial is a Chameleon template rendered by `render_partial`. This page covers the rules that are not obvious from the call itself: how the name resolves, how the model gets in, how partials nest, and how they fit with METAL layouts.
+Once the thumbnail renders, the temptation is to turn every repeated block in the app into a partial on the same afternoon. Go ahead, but read this page first. It is the rulebook, and most of the rules exist because someone, usually the author, got them wrong once.
 
-## Paths are relative to the registered folder
+## Rule one: paths are relative to the registered folder
 
-The first argument to `render_partial` is a path relative to the folder you passed to `register_extensions`. It is never relative to the template making the call, even when that template is itself a partial in a subfolder. A partial in `shared/partials/` that wants a sibling still writes the full path:
+This is the rule everyone trips on, so it goes first. The first argument to `render_partial` is a path relative to the folder you gave `register_extensions`. It is never relative to the template making the call, even when that template is itself a partial sitting in a subfolder.
+
+Here is the full video card from the demo app. It lives in `shared/partials/` and it wants the thumbnail that lives right next to it. It still spells out the whole path:
 
 ```html
 <!-- templates/shared/partials/video_square.pt -->
@@ -287,29 +295,31 @@ The first argument to `render_partial` is a path relative to the folder you pass
 </div>
 ```
 
-This differs from Chameleon's own `metal:use-macro="load: ../shared/_layout.pt"`, where the path is relative to the current template file. Keep the two rules apart: `load:` is relative to the file, `render_partial` is relative to the folder.
+The reason it trips people is that Chameleon itself uses the other convention. A layout is pulled in with `metal:use-macro="load: ../shared/_layout.pt"`, and that `load:` path is relative to the current template file. So in one `.pt` file you may have both kinds of path side by side. The rule of thumb: `load:` thinks like a file, `render_partial` thinks like the folder.
 
-The name must point at a regular file inside the registered folder. An absolute path, a `..` that leaves the folder, a `package:path` spec, or a folder name is reported as a missing template, with Chameleon's own `ValueError` (`Template not found: ...`). A `..` that stays inside the folder is fine. Surrounding whitespace and redundant `./` or `//` segments are normalized away, so every spelling of a file compiles and caches one template. On macOS and Windows, a differently cased spelling still loads but caches separately, so pick one spelling.
+There is a second half to this rule. The name has to point at a regular file inside the registered folder. An absolute path, a `..` that climbs out of the folder, a `package:path` spec, or a bare folder name is reported as a missing template, with Chameleon's own `ValueError` reading `Template not found: ...`. A `..` that stays inside the folder is fine. Surrounding whitespace and redundant `./` or `//` segments are normalised away, so every spelling of a file compiles and caches as one template. On macOS and Windows a differently cased spelling will still load, but it caches as a second template, so pick one spelling and stick to it.
 
-## The model is the keyword arguments
+## Rule two: the model is exactly what you pass
 
-Everything after the path is passed to the fragment as its model. Any Python object works, and the template uses it through ordinary Chameleon expressions:
+Everything after the path becomes the fragment's model. Any Python object is welcome, and the template reaches into it with ordinary Chameleon expressions:
 
 ```html
 ${ render_partial('shared/partials/user_card.pt', user=user, show_email=False) }
 ```
 
-A name the template references but the call does not pass raises Chameleon's `NameError` at render time. There are no defaults, so pass every name the partial uses, or give the partial a `tal:define` with a fallback.
+What you do not pass, the partial does not have. A name the template references but the call left out raises Chameleon's `NameError` at render time, with the expression and line number in the message. There are no defaults on the call side, so either pass every name the partial uses or give the partial its own fallback with `tal:define`.
 
-Three names are not yours to use. `encoding` is reserved because `render_partial` passes `encoding='utf-8'` to Chameleon itself, and supplying it raises `TypeError`. `translate` and `target_language` have special meaning to Chameleon's i18n support, and `repeat` is the name of Chameleon's loop-state object, so a value under any of those names will not reach your template the way you expect.
+Four names in the model are already spoken for. `encoding` belongs to the package, which passes `encoding='utf-8'` into Chameleon on every render; supply your own and Python raises `TypeError` for the duplicate keyword. `translate` and `target_language` are Chameleon's i18n hooks, and `repeat` is the name of Chameleon's loop-state object. A value under any of those names will not reach your template the way you expect, so call it something else.
 
-## Nesting
+## Fragments all the way down
 
-Every partial automatically receives `render_partial` in its model, so a partial can render other partials with no extra wiring. The `video_square.pt` fragment above does this with `video_image.pt`. Nesting depth is not limited by the package. A partial that includes itself without a stopping condition raises Python's `RecursionError`.
+Every partial automatically receives `render_partial` in its model, so a partial can render other partials with no extra wiring. The video card above does exactly that with the thumbnail, and the thumbnail could do it again if it had anything smaller to delegate to. The package puts no limit on the depth.
+
+The one thing it cannot save you from is a partial that renders itself without a way to stop. That ends, as recursion in Python always does, with `RecursionError`. If a fragment genuinely needs to recurse, say for a comment thread, wrap the inner call in a `tal:condition` that checks a depth or a children list.
 
 ## Loops
 
-Call `render_partial` inside a `tal:repeat` to render a fragment per item. The loop variable in the outer template can be renamed to whatever the partial expects:
+Put the call inside a `tal:repeat` and you get one fragment per item. The loop variable in the outer template can be named whatever reads well there, and renamed to whatever the partial expects on the way in:
 
 ```html
 <span class="video" tal:repeat="v videos">
@@ -317,9 +327,11 @@ Call `render_partial` inside a `tal:repeat` to render a fragment per item. The l
 </span>
 ```
 
+This is the listing page of the demo app in its entirety, give or take a heading. Each `v` becomes `video` inside the card, the card renders the thumbnail, and the page is done.
+
 ## Layouts
 
-Partials compose with METAL layout inheritance. A page fills a layout's slot and renders partials inside the slot. The layout itself is an ordinary Chameleon template; by convention it starts with an underscore so it is easy to tell apart from pages and partials:
+Partials and METAL layouts are made for different jobs and they get along well. A layout is the stage: the `<html>` skeleton, the navigation, the footer, with a slot where the page goes. Partials are the props. A page fills the slot and renders partials inside it:
 
 ```html
 <!-- templates/shared/_layout.pt -->
@@ -342,11 +354,13 @@ Partials compose with METAL layout inheritance. A page fills a layout's slot and
 </div>
 ```
 
-A partial can use a layout too, since it is just a template, but a fragment meant to be inserted into a page normally should not.
+The underscore on `_layout.pt` is a convention, not a requirement. It makes the one file that is never rendered directly stand out in a folder listing. Note the two path styles in `index.pt`, right next to each other: `load:` climbing up a directory, `render_partial` starting from the root.
+
+A partial can use a layout too, because it is just a template. A fragment meant to be dropped into the middle of a page normally should not, since the page already has one.
 
 ## Rendering a fragment from Python
 
-`render_partial` is a normal Python function, so a view can call it directly. This is how to return just a fragment for an HTMX request, build the body of an email, or assert on markup in a test. The return value is an `HTML` object; read its `html_text` attribute for the string:
+`render_partial` is an ordinary Python function, and that opens a door. A view can call it directly to return just a card for an HTMX request, to build the body of an email, or to check markup in a test. The return value is the `HTML` wrapper; its `html_text` attribute is the string:
 
 ```python
 import chameleon_partials
@@ -355,22 +369,24 @@ fragment = chameleon_partials.render_partial('shared/partials/video_square.pt', 
 return Response(fragment.html_text)
 ```
 
-Pass the `HTML` object itself, not `html_text`, when the value goes back into another template. Chameleon escapes a plain string and inserts an `HTML` object as is.
+The direction matters. Going out to the wire, you want the string, so read `html_text`. Going back into another template, pass the `HTML` object itself. Chameleon escapes a plain string and inserts an `HTML` object verbatim, and the [Troubleshooting](troubleshooting.qmd) page has an entry for what it looks like when you mix those up.
 
-## Choosing partials safely
+## Never let the request choose the file
 
-Choose the partial in your code, never from request data. The containment check above stops a name from reaching outside the template folder, but a request that picks the fragment should still be mapped to a name you wrote rather than used to build the path:
+It is tempting, once fragments are cheap, to let a query parameter pick which one to render: `?style=card` or `?style=row`. Do it, but do it with a lookup table, never by building the path from the parameter:
 
 ```python
 PARTIALS = {'card': 'shared/partials/video_square.pt', 'row': 'shared/partials/video_row.pt'}
 html = render_partial(PARTIALS[request.params['style']], video=video)
 ```
 
-Pass the model as named keyword arguments too. Spreading a request's parameters into the call (`render_partial(name, **request.params)`) lets a parameter replace a name the template relies on. `render_partial` is only injected into the model when the key is absent, so a request parameter named `render_partial` would take its place.
+The containment check from rule one will refuse a name that climbs out of the templates folder, and that check is a safety net, not a design. A table of names you wrote means the request can choose between two fragments and nothing else.
+
+The same caution applies to the model. Spreading a request's parameters straight into the call, as in `render_partial(name, **request.params)`, lets anyone who can type a URL set any name the template relies on. `render_partial` is only injected into the model when the key is absent, so a parameter literally called `render_partial` would take its place. Pass named keyword arguments and the request stays on the outside.
 
 ## A layout for the templates folder
 
-The package does not require any particular layout, but this one keeps pages, layouts, and partials apart and matches the example app:
+The package has no opinion about folder structure, but the demo app's structure has held up well. Pages grouped by area, one layout, and all the fragments in one place where you can find them:
 
 ```text
 templates/
@@ -389,11 +405,15 @@ templates/
 
 ### Testing
 
-Partials are plain functions over plain files, so they are easy to test without a web framework: register a folder, call `render_partial`, and assert on the string.
+Template code has a reputation for being hard to test, and it is mostly earned: you need a running app, a request, a session, and a browser-shaped tool to read the result. Partials sidestep all of that. `render_partial` is a function that takes a path and some keyword arguments and returns a string wrapped in an object. You can call it from a test the way you would call any other function, with no web framework in sight.
 
-## A fixture for registration
+There is one thing to know first, and it is the reason this page exists.
 
-`register_extensions` keeps its state in module globals, and with the default `cache_init=True` a second call after a successful one does nothing. A test suite that registers its own template folder therefore has to either pass `cache_init=False` or reset the flag after each test, otherwise the first folder registered wins for the whole session:
+## The one-shot registration, and the fixture that tames it
+
+`register_extensions` keeps its state in module globals, and with the default `cache_init=True`, a second call after a successful one is a no-op. In production that is a feature. In a test suite it is a trap: the first folder anyone registers wins for the rest of the session, and a test that registers a different folder will quietly keep rendering from the old one.
+
+The fix is a fixture that registers the test folder and then clears the flag on the way out, so the next test starts clean:
 
 ```python
 from pathlib import Path
@@ -411,11 +431,13 @@ def registered_extension():
     chameleon_partials.has_registered_extensions = False
 ```
 
-Resetting `has_registered_extensions` is enough; the next `register_extensions` call builds a fresh loader. A registration that raised, for example because the folder does not exist, does not set the flag, so a failed call can simply be retried.
+Resetting `has_registered_extensions` is all it takes. The next `register_extensions` call builds a fresh loader as if nothing had happened. Passing `cache_init=False` on every call works too, but the fixture keeps the knowledge in one place.
+
+A registration that raised, say because the folder does not exist, never sets the flag in the first place. That means a failed call can simply be retried once the path is fixed, and it means a typo in a fixture path fails loudly rather than leaving a half-registered module behind.
 
 ## Asserting on markup
 
-`render_partial` returns an `HTML` object. Read `html_text` for the rendered string and assert on it:
+With the fixture in place, a rendering test is three lines. Call the function, read `html_text`, look for the markup you expect:
 
 ```python
 def test_render_with_data(registered_extension):
@@ -423,11 +445,13 @@ def test_render_with_data(registered_extension):
     assert '<span>Your name is Sarah and age is 32</span>' in html.html_text
 ```
 
-Nested partials need no special setup, because `render_partial` is injected into every partial's model. A test that renders the outer partial covers the inner one too.
+Nested partials need nothing extra, because `render_partial` is injected into every partial's model. A test that renders the video card has also exercised the thumbnail inside it, which is usually what you want: test the card people see, not the pieces in isolation.
 
-## Testing the error paths
+## Testing the promises about errors
 
-The package promises two things about errors, and tests can rely on both. `PartialsException` is raised only for misuse: rendering before registration, registering an empty or non-existent folder, or passing a non-dictionary to `extend_model`. Everything Chameleon raises passes through unchanged, so a missing template is Chameleon's `ValueError`, not `PartialsException`:
+The package makes two promises about errors, and tests can lean on both.
+
+First, `PartialsException` means misuse and nothing else: rendering before registration, registering an empty or non-existent folder, or handing `extend_model` something that is not a dictionary. Second, everything Chameleon raises passes through untouched. A missing template is Chameleon's `ValueError`, not a `PartialsException`, so code that already catches Chameleon's errors keeps working when it starts rendering through partials:
 
 ```python
 def test_missing_template(registered_extension):
@@ -440,28 +464,30 @@ def test_not_registered():
         chameleon_partials.render_partial('doesnt-matter.pt')
 ```
 
-The second test must run without the fixture, or after a fixture that has reset the flag.
+The second test is the one place the fixture must be absent. It has to run either before any fixture has registered a folder, or after one has reset the flag, which the fixture above guarantees.
 
 ## Testing through the framework
 
-For a Pyramid app, a WebTest functional test exercises the `BeforeRender` subscriber, the layout, and the partials together. The example app in the repository does this in `example/tests/test_functional.py`. Nothing in the package needs mocking; register the real template folder in the app factory as production code does.
+Unit tests on fragments catch most things, but they will not catch a `BeforeRender` subscriber that `config.scan()` never found. For that, one functional test through the real app is worth a dozen mocks. The demo app does it with WebTest in `example/tests/test_functional.py`: fetch the home page, assert that the thumbnail markup is in the body. If that passes, the subscriber ran, the layout rendered, the page filled the slot, the loop iterated, and two levels of partials did their job. Nothing in the package needs mocking; register the real template folder in the app factory exactly as production does.
 
 ## auto_reload in tests
 
-Passing `auto_reload=True` makes Chameleon check the file's modification time on each render and recompile when it changed. Tests that write template files on the fly need it; a suite over fixed template files does not, and the default `False` is slightly faster.
+`auto_reload=True` tells Chameleon to check a template's modification time on each render and recompile when it changed. A test that writes template files on the fly needs it. A suite over a fixed set of template files does not, and the default `False` saves a stat call per render. The fixture above turns it on, which costs nothing noticeable and means a test can edit a template mid-run if it ever needs to.
 
 
 ### Troubleshooting
 
-Each heading below is an error you can hit in normal use, with the cause and the fix. The first group comes from chameleon_partials and is raised as `PartialsException`. The rest come from Chameleon or Python and pass through unchanged, because the package never wraps them.
+This is a field guide. Each heading is an error message, or the symptom you see when there is no message, so you can search this page for the exact text in your terminal. Under each one: what happened, why, and what to do about it.
+
+The first five come from chameleon_partials itself and arrive as `PartialsException`. They all mean the library was set up or called wrongly, and they are all quick to fix. Everything after that comes from Chameleon or Python and passes through unchanged, because the package deliberately never wraps another library's errors.
 
 ## PartialsException: You must call register_extensions() before this function can be used
 
-`render_partial` ran before `register_extensions`. Move the registration to application startup, before the first request. In Pyramid that is the `main` function that builds the WSGI app. In a test, add a fixture that registers the test template folder, as shown in [Testing](testing.qmd).
+`render_partial` ran before anyone told the library where the templates are. This is the classic first-request-in-a-new-project error. Move `register_extensions` to application startup, before the first request is served: in Pyramid, the `main` function that builds the WSGI app. In a test, add a fixture that registers the test template folder, as shown in [Testing](testing.qmd).
 
 ## PartialsException: The template_folder must be specified
 
-`register_extensions` was called with an empty string or `None`. Pass the path to your templates folder. Build it from `__file__` so it does not depend on the working directory:
+`register_extensions` was called with an empty string or `None`, usually from a setting that was never filled in. Pass the path to the templates folder, and build it from `__file__` so the working directory cannot change the answer:
 
 ```python
 folder = (Path(__file__).parent / 'templates').as_posix()
@@ -469,51 +495,51 @@ folder = (Path(__file__).parent / 'templates').as_posix()
 
 ## PartialsException: The specified template folder must be a folder
 
-The path passed to `register_extensions` does not exist or is a file. Check the spelling and that the path is absolute or relative to the right place. The failed call does not mark the package as registered, so after fixing the path a plain retry works.
+The path exists in your head but not on disk, or it points at a file. Check the spelling and whether the path is meant to be absolute or relative. The failed call did not mark the library as registered, so once the path is right, a plain retry works. No flag to reset.
 
 ## PartialsException: The model must be a dictionary
 
-`extend_model` was given something other than a `dict` or `None`. Pass the view-model dictionary, or `None` to get a new one back.
+`extend_model` was handed something other than a `dict` or `None`. A common way to get here is returning a list or a model object from a view and wrapping that. Pass the view-model dictionary, or `None` to get a fresh one back.
 
 ## ValueError: Template not found
 
-`render_partial` could not resolve the name to a regular file inside the registered folder. Check these causes in order:
+`render_partial` could not turn the name into a regular file inside the registered folder. This is the most common error on this page, and it has five causes. Work through them in order:
 
-- The path is relative to the registered folder, not to the calling template. From inside `shared/partials/a.pt`, a sibling is `shared/partials/b.pt`, not `b.pt` and not `./b.pt`.
-- The name points at a folder rather than a file, for example `shared/partials` without the file name.
-- The name reaches outside the registered folder: an absolute path, a `..` that leaves the folder, or a `package:path` spec. These are refused on purpose. Move the file under the registered folder or register a higher folder.
-- The case does not match on Linux. `Video_Square.pt` and `video_square.pt` are different files there, even though macOS and Windows would load either.
-- The registered folder is not the one you think, usually because `register_extensions` was called earlier with a different folder and the second call was a no-op. See the next heading.
+- The path is relative to the registered folder, not to the calling template. From inside `shared/partials/a.pt`, a sibling is `shared/partials/b.pt`, not `b.pt` and not `./b.pt`. This is the cause nine times out of ten.
+- The name points at a folder rather than a file, for example `shared/partials` without the file name on the end.
+- The name reaches outside the registered folder: an absolute path, a `..` that climbs out, or a `package:path` spec. These are refused on purpose. Move the file under the registered folder, or register a folder higher up.
+- The case does not match on Linux. `Video_Square.pt` and `video_square.pt` are different files there, even though macOS and Windows would cheerfully load either. This one tends to appear the first time the app runs in a container.
+- The registered folder is not the one you think, usually because an earlier `register_extensions` call pointed somewhere else and the second call was a no-op. See the next heading.
 
 ## render_partial uses the wrong folder, or a second register_extensions is ignored
 
-With the default `cache_init=True`, `register_extensions` does nothing once a previous call succeeded. In an application that is the behaviour you want. In tests, or in a process that must switch folders, pass `cache_init=False` or set `chameleon_partials.has_registered_extensions = False` before registering again.
+With the default `cache_init=True`, `register_extensions` does nothing once a previous call has succeeded. In an application that is the behaviour you want. In a test suite, or in a process that must switch folders, pass `cache_init=False` or set `chameleon_partials.has_registered_extensions = False` before registering again.
 
 ## NameError: render_partial
 
-Chameleon could not find `render_partial` in the template's model. The partial itself always gets it, so this happens in a page template. In Pyramid, make sure the `BeforeRender` subscriber module is inside a package that `config.scan()` covers and that it is imported. In other frameworks, return `chameleon_partials.extend_model(model)` from the view instead of `model`.
+Chameleon went looking for `render_partial` in the template's model and found nothing. A partial always receives it, so this only happens in a page template, and it means the wiring step was skipped or did not take. In Pyramid, check that the module holding the `BeforeRender` subscriber sits inside a package that `config.scan()` covers; a subscriber in a file nobody imports is a subscriber that never registers. In other frameworks, make sure the view returns `chameleon_partials.extend_model(model)` and not just `model`.
 
 ## NameError: some other name
 
-A partial references a name that the `render_partial` call did not pass. Add the keyword argument to the call, or give the partial a fallback with `tal:define`. Chameleon's error message shows the expression, the file, and the line.
+A partial references a name that the `render_partial` call did not pass. Chameleon's message shows the expression, the file, and the line, so the fix is usually obvious: add the keyword argument to the call, or give the partial a fallback with `tal:define` if the value is genuinely optional.
 
 ## TypeError: render() got multiple values for keyword argument 'encoding'
 
-The model passed a value named `encoding`. That name is taken by the package's own call into Chameleon. Rename the variable.
+The model included a value called `encoding`. That name is already taken by the package's own call into Chameleon. Rename the variable; `charset` or `text_encoding` both work.
 
 ## The fragment shows up as escaped text
 
-The markup appears literally, with `&lt;div&gt;` where tags should be. The value inserted into the template was a plain string, usually `html_text`, rather than the `HTML` object that `render_partial` returns. Pass the object through, and only read `html_text` where you need a `str`, such as a response body or a test assertion.
+The page displays the markup literally, `&lt;div&gt;` and all. The value inserted into the template was a plain string, almost always `html_text`, instead of the `HTML` object that `render_partial` returns. Pass the object through to the template and read `html_text` only at the edge, where you need a real `str`: a response body, an email, a test assertion.
 
 ## Edits to a template do not show up
 
-Chameleon compiled the template once and is serving the compiled version. Register with `auto_reload=True` during development, and restart the process after template changes in production, where the default `False` is the right setting.
+You changed the file, refreshed, and nothing happened. Chameleon compiled the template once and is serving the compiled version. Register with `auto_reload=True` during development so it checks the file's timestamp on each render. In production, leave it `False` and restart after deploying template changes.
 
 ## RecursionError
 
-A partial renders itself, directly or through another partial, without a condition that stops. Add a `tal:condition` around the nested call, or pass a depth that the partial checks.
+A partial renders itself, directly or through a chain of other partials, with nothing to stop it. Add a `tal:condition` around the nested call that checks a depth counter or an empty children list, and pass that value down on each call.
 
 ## IsADirectoryError, or a file outside the templates folder rendered
 
-Both were possible before 0.2.2 and 0.2.1 respectively. Upgrade. Current releases report a folder name or an outside path as `ValueError: Template not found`. The check is lexical, so a symlink inside the folder is still followed; keep symlinks out of the templates folder if that matters to you.
+Both were possible in older releases: the directory error until 0.2.2, the outside file until 0.2.1. Upgrade. Current releases report a folder name or an outside path as `ValueError: Template not found`, and the containment check sees the name exactly as Chameleon's loader does. The check is lexical, so a symlink inside the folder is still followed; keep symlinks out of the templates folder if that matters to you.
 
